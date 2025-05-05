@@ -75,13 +75,20 @@ app.MapControllerRoute(
 
 app.MapRazorPages(); // Thêm để Identity UI (Razor Pages) hoạt động
 
-// Tạo vai trò Admin, NhanVien, Brand và Passenger với xử lý lỗi và logging
+// Tạo vai trò và tài khoản mặc định
 using (var scope = app.Services.CreateScope())
 {
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    var services = scope.ServiceProvider;
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+    var logger = services.GetRequiredService<ILogger<Program>>();
 
-    string[] roleNames = { "Admin", "NhanVien", "Brand", "Passenger" }; // Thêm vai trò Passenger
+    // Áp dụng migration
+    var dbContext = services.GetRequiredService<ApplicationDbContext>();
+    dbContext.Database.Migrate();
+
+    // Seeding vai trò
+    string[] roleNames = { "Admin", "NhanVien", "Brand", "Passenger" };
     foreach (var roleName in roleNames)
     {
         try
@@ -107,6 +114,62 @@ using (var scope = app.Services.CreateScope())
         {
             logger.LogError(ex, "Error creating role {RoleName}.", roleName);
         }
+    }
+
+    // Seeding tài khoản Admin
+    var adminEmail = "admin@gmail.com";
+    var adminUser = await userManager.FindByEmailAsync(adminEmail);
+    if (adminUser == null)
+    {
+        adminUser = new ApplicationUser
+        {
+            UserName = adminEmail,
+            Email = adminEmail,
+            FullName = "Quản trị viên",
+            PhoneNumber = "0000000000" // Giá trị mặc định cho PhoneNumber
+        };
+        var createResult = await userManager.CreateAsync(adminUser, "Admin123/");
+        if (createResult.Succeeded)
+        {
+            await userManager.AddToRoleAsync(adminUser, "Admin");
+            logger.LogInformation("Default Admin account created with email {Email}.", adminEmail);
+        }
+        else
+        {
+            logger.LogError("Failed to create Admin account {Email}: {Errors}", adminEmail, string.Join(", ", createResult.Errors.Select(e => e.Description)));
+        }
+    }
+    else
+    {
+        logger.LogInformation("Admin account {Email} already exists.", adminEmail);
+    }
+
+    // Seeding tài khoản NhanVien
+    var nhanVienEmail = "nhanvien@gmail.com";
+    var nhanVienUser = await userManager.FindByEmailAsync(nhanVienEmail);
+    if (nhanVienUser == null)
+    {
+        nhanVienUser = new ApplicationUser
+        {
+            UserName = nhanVienEmail,
+            Email = nhanVienEmail,
+            FullName = "Nhân viên",
+            PhoneNumber = "0000000000" // Giá trị mặc định cho PhoneNumber
+        };
+        var createResult = await userManager.CreateAsync(nhanVienUser, "Nhanvien123/");
+        if (createResult.Succeeded)
+        {
+            await userManager.AddToRoleAsync(nhanVienUser, "NhanVien");
+            logger.LogInformation("Default NhanVien account created with email {Email}.", nhanVienEmail);
+        }
+        else
+        {
+            logger.LogError("Failed to create NhanVien account {Email}: {Errors}", nhanVienEmail, string.Join(", ", createResult.Errors.Select(e => e.Description)));
+        }
+    }
+    else
+    {
+        logger.LogInformation("NhanVien account {Email} already exists.", nhanVienEmail);
     }
 }
 
