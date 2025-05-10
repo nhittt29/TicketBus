@@ -34,6 +34,10 @@ namespace TicketBus.Data
         public DbSet<VehicleType> VehicleTypes { get; set; }
         public DbSet<Notification> Notifications { get; set; }
 
+        //Khung chat
+        public DbSet<ChatRoom> ChatRooms { get; set; }
+        public DbSet<ChatMessage> ChatMessages { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -1096,6 +1100,8 @@ namespace TicketBus.Data
             modelBuilder.Entity<TypeNews>().HasKey(tn => tn.IdTypeNews);
             modelBuilder.Entity<VehicleType>().HasKey(vt => vt.IdType);
             modelBuilder.Entity<ScheduleDetails>().HasKey(sd => sd.IdSchedule);
+            modelBuilder.Entity<ChatRoom>().HasKey(cr => cr.Id);
+            modelBuilder.Entity<ChatMessage>().HasKey(cm => cm.Id);
 
             // Cấu hình mối quan hệ
             // Brand và Coach (1-N)
@@ -1336,6 +1342,44 @@ namespace TicketBus.Data
                 .HasOne(t => t.Employee)
                 .WithMany()
                 .HasForeignKey(t => t.IdEmployee)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // ChatRoom và ChatMessage
+            modelBuilder.Entity<ChatRoom>()
+                .HasMany(c => c.Messages)
+                .WithOne(m => m.ChatRoom)
+                .HasForeignKey(m => m.ChatRoomId)
+                .OnDelete(DeleteBehavior.NoAction); // Thêm để tránh xóa cascade
+
+            modelBuilder.Entity<ChatRoom>()
+                .HasMany(c => c.Participants)
+                .WithMany(u => u.ChatRooms);
+
+            modelBuilder.Entity<ChatMessage>()
+                .Property(m => m.SentDate)
+                .HasDefaultValueSql("GETDATE()");
+
+            // Thêm chỉ mục để cải thiện hiệu suất
+            modelBuilder.Entity<ChatMessage>()
+                .HasIndex(cm => cm.ChatRoomId);
+
+            modelBuilder.Entity<ChatMessage>()
+                .HasIndex(cm => cm.SenderId);
+
+            modelBuilder.Entity<ChatMessage>()
+                .HasIndex(cm => cm.ReceiverId);
+
+            // Cấu hình mối quan hệ của ChatMessage với ApplicationUser
+            modelBuilder.Entity<ChatMessage>()
+                .HasOne(cm => cm.Sender)
+                .WithMany()
+                .HasForeignKey(cm => cm.SenderId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<ChatMessage>()
+                .HasOne(cm => cm.Receiver)
+                .WithMany()
+                .HasForeignKey(cm => cm.ReceiverId)
                 .OnDelete(DeleteBehavior.NoAction);
         }
     }

@@ -1,6 +1,4 @@
-﻿/* dashboard.css */
-
-/* Định dạng chung cho container */
+﻿/* Định dạng chung cho container */
 .container-fluid {
     padding: 1.5rem;
 }
@@ -34,8 +32,16 @@
 }
 
 .card-body {
-    font-size: 1.1rem;
+    font-size: 1rem; /* Giảm kích thước font để giống "ban đầu" */
     font-weight: 500;
+}
+
+/* Định dạng riêng cho card-body chứa biểu đồ */
+.chart-card .card-body {
+    min-height: 300px; /* Chỉ áp dụng min-height cho biểu đồ */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .card-footer {
@@ -87,6 +93,12 @@
         margin-right: 0.5rem;
     }
 
+.card-body canvas {
+    max-height: 250px; /* Giới hạn chiều cao tối đa cho canvas */
+    width: 100% !important; /* Đảm bảo canvas chiếm toàn bộ chiều rộng */
+    height: auto !important; /* Tự động điều chỉnh chiều cao dựa trên tỷ lệ */
+}
+
 /* Định dạng bảng thông báo */
 .table {
     width: 100%;
@@ -97,9 +109,10 @@
 
     .table th,
     .table td {
-        padding: 0.75rem;
+        padding: 0.5rem; /* Giảm padding để bảng nhỏ hơn */
         vertical-align: middle;
         border: 1px solid #dee2e6;
+        font-size: 0.9rem; /* Giảm kích thước font để giống "ban đầu" */
     }
 
     .table thead th {
@@ -108,8 +121,8 @@
     }
 
 .badge {
-    padding: 0.5em 0.75em;
-    font-size: 0.85em;
+    padding: 0.4em 0.6em; /* Giảm kích thước badge */
+    font-size: 0.8em;
     border-radius: 0.25rem;
 }
 

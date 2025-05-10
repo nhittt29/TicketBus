@@ -31,7 +31,7 @@ namespace TicketBus.Models
 
         public Brand? Brand { get; set; }
 
-        public ICollection<Seat> Seats { get; set; } = new List<Seat>(); // Khởi tạo để tránh null
+        public ICollection<Seat> Seats { get; set; } = new List<Seat>();
     }
 
     public enum CoachState

@@ -4,6 +4,10 @@ using Microsoft.EntityFrameworkCore;
 using TicketBus.Data;
 using TicketBus.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Identity;
+using System.Threading.Tasks;
+using TicketBus.Models.ViewModels;
+using System.Linq;
 
 namespace TicketBus.Areas.Brand.Controllers
 {
@@ -13,11 +17,15 @@ namespace TicketBus.Areas.Brand.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<HomeController> _logger;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
 
-        public HomeController(ApplicationDbContext context, ILogger<HomeController> logger)
+        public HomeController(ApplicationDbContext context, ILogger<HomeController> logger, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
         {
             _context = context;
             _logger = logger;
+            _userManager = userManager;
+            _roleManager = roleManager;
         }
 
         public async Task<IActionResult> Index()
@@ -40,6 +48,133 @@ namespace TicketBus.Areas.Brand.Controllers
 
             ViewBag.BrandInfo = brand;
             return View();
+        }
+
+        // GET: /Brand/Home/Chat
+        public IActionResult Chat()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetUsers()
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Json(new { error = "Không thể xác định người dùng." });
+            }
+
+            // Lấy role của người dùng hiện tại
+            var user = await _userManager.FindByIdAsync(userId);
+            var roles = await _userManager.GetRolesAsync(user);
+            var isRestrictedRole = roles.Any(r => new[] { "Brand", "Passenger", "NhanVien" }.Contains(r));
+
+            var admins = await _userManager.GetUsersInRoleAsync("Admin");
+            var users = isRestrictedRole
+                ? admins.Select(u => new
+                {
+                    id = u.Id,
+                    fullName = u.FullName,
+                    isOnline = u.IsOnline
+                }).ToList()
+                : await _userManager.Users
+                    .Where(u => u.Id != userId) // Loại trừ người dùng hiện tại
+                    .Select(u => new
+                    {
+                        id = u.Id,
+                        fullName = u.FullName,
+                        isOnline = u.IsOnline
+                    })
+                    .ToListAsync();
+
+            return Json(users);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetChatHistory(string receiverId)
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(receiverId))
+            {
+                _logger.LogWarning("GetChatHistory: Invalid user info - userId: {UserId}, receiverId: {ReceiverId}", userId, receiverId);
+                return Json(new { error = "Thông tin người dùng không hợp lệ." });
+            }
+
+            var roomName = string.Join("-", new[] { userId, receiverId }.OrderBy(x => x));
+            _logger.LogInformation("GetChatHistory: Fetching chat room with RoomName: {RoomName}, userId: {UserId}, receiverId: {ReceiverId}", roomName, userId, receiverId);
+
+            var chatRoom = await _context.ChatRooms
+                .Include(r => r.Messages)
+                .FirstOrDefaultAsync(r => r.RoomName == roomName);
+
+            if (chatRoom == null)
+            {
+                _logger.LogWarning("GetChatHistory: Chat room not found for RoomName: {RoomName}", roomName);
+                return Json(new List<ChatMessageViewModel>());
+            }
+
+            // Không tự động cập nhật IsRead ở đây, chỉ lấy dữ liệu
+            var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"); // Windows
+            // Nếu dùng Linux, thay bằng: TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
+
+            var messages = chatRoom.Messages
+                .OrderBy(m => m.SentDate)
+                .Select(m => new ChatMessageViewModel
+                {
+                    senderId = m.SenderId,
+                    senderName = _context.Users.FirstOrDefault(u => u.Id == m.SenderId)?.FullName ?? "Unknown",
+                    content = m.Content,
+                    sentDate = TimeZoneInfo.ConvertTimeFromUtc(m.SentDate, vietnamTimeZone), // Chuyển đổi sang múi giờ Việt Nam
+                    isRead = m.IsRead
+                }).ToList();
+
+            _logger.LogInformation("GetChatHistory: Loaded {Count} messages for RoomName: {RoomName}", messages.Count, roomName);
+            foreach (var msg in messages)
+            {
+                _logger.LogInformation("GetChatHistory: Message - SenderId: {SenderId}, Content: {Content}, SentDate: {SentDate}, IsRead: {IsRead}", msg.senderId, msg.content, msg.sentDate, msg.isRead);
+            }
+
+            return Json(messages);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> MarkAsRead(string receiverId)
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(receiverId))
+            {
+                _logger.LogWarning("MarkAsRead: Invalid user info - userId: {UserId}, receiverId: {ReceiverId}", userId, receiverId);
+                return Json(new { error = "Thông tin người dùng không hợp lệ." });
+            }
+
+            var roomName = string.Join("-", new[] { userId, receiverId }.OrderBy(x => x));
+            var chatRoom = await _context.ChatRooms
+                .Include(r => r.Messages)
+                .FirstOrDefaultAsync(r => r.RoomName == roomName);
+
+            if (chatRoom == null)
+            {
+                _logger.LogWarning("MarkAsRead: Chat room not found for RoomName: {RoomName}", roomName);
+                return Json(new { success = false });
+            }
+
+            var unreadMessages = chatRoom.Messages
+                .Where(m => m.ReceiverId == userId && !m.IsRead)
+                .ToList();
+
+            if (unreadMessages.Any())
+            {
+                foreach (var message in unreadMessages)
+                {
+                    message.IsRead = true;
+                    _logger.LogInformation("MarkAsRead: Marking message as read - MessageId: {MessageId}, Content: {Content}", message.Id, message.Content);
+                }
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("MarkAsRead: Updated {Count} messages as read for RoomName: {RoomName}", unreadMessages.Count, roomName);
+            }
+
+            return Json(new { success = true });
         }
 
         [HttpGet]
@@ -178,6 +313,26 @@ namespace TicketBus.Areas.Brand.Controllers
                 _logger.LogError(ex, "MarkAllNotificationsAsRead: Failed to mark all notifications as read for UserId {UserId}.", userId);
                 return Json(new { success = false, message = "Có lỗi xảy ra khi đánh dấu thông báo. Vui lòng thử lại." });
             }
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetUnreadMessageCount()
+        {
+            _logger.LogInformation("GetUnreadMessageCount: API called.");
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("GetUnreadMessageCount: UserId is null or empty.");
+                return Json(new { unreadCount = 0 });
+            }
+
+            var unreadCount = await _context.ChatMessages
+                .Where(m => m.ReceiverId == userId && !m.IsRead)
+                .CountAsync();
+
+            _logger.LogInformation("GetUnreadMessageCount: Total unread messages for UserId {UserId} is {UnreadCount}", userId, unreadCount);
+            return Json(new { unreadCount });
         }
     }
 }

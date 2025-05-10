@@ -1,0 +1,54 @@
+﻿@model List<TicketBus.Models.Notification>
+@using TicketBus.Models
+
+@{
+    ViewData["Title"] = "Danh sách thông báo";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<main>
+    <div class="container-fluid px-4">
+        <h1 class="mt-4">Danh sách thông báo</h1>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item active">Thông báo</li>
+        </ol>
+
+        @if (Model.Any())
+        {
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Thông báo</th>
+                        <th>Ngày tạo</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var notification in Model)
+                    {
+                        <tr>
+                            <td>@notification.Message</td>
+                            <td>@notification.CreatedDate.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                @if (notification.IsRead)
+                                {
+                                    <span class="badge bg-success">Đã đọc</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">Chưa đọc</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="alert alert-info text-center">
+                Không có thông báo nào.
+            </div>
+        }
+    </div>
+</main>

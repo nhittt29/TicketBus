@@ -139,8 +139,8 @@ body {
 
 /* Button styles */
 .btn-primary {
-    background-color: #007bff;
-    border-color: #007bff;
+    background-color: #48A6A7;
+    border-color: #48A6A7;
     border-radius: 5px;
     padding: 10px 20px;
     font-size: 16px;
@@ -148,8 +148,8 @@ body {
 }
 
     .btn-primary:hover {
-        background-color: #0056b3;
-        border-color: #0056b3;
+        background-color: #3c8788; /* Tông màu tối hơn khi hover */
+        border-color: #3c8788;
         transform: translateY(-2px);
     }
 
@@ -164,7 +164,7 @@ body {
         color: white;
     }
 
-/* Glow-on-hover effect */
+/* Glow-on-hover effect (được giữ lại cho các phần khác, nhưng sẽ không áp dụng cho khung chat) */
 .glow-on-hover {
     position: relative;
     overflow: hidden;
@@ -190,6 +190,99 @@ body {
     .glow-on-hover:hover::before {
         left: 100%;
     }
+
+/* Chat-specific styles */
+.chat-user-list {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.chat-content {
+    height: 400px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+#chatBox {
+    /* Loại bỏ hiệu ứng glow-on-hover */
+    transition: none;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); /* Giữ shadow mặc định */
+}
+
+    #chatBox:hover {
+        transform: none; /* Bỏ hiệu ứng nâng lên */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); /* Giữ shadow mặc định khi hover */
+    }
+
+    #chatBox::before {
+        content: none; /* Bỏ ánh sáng chạy ngang */
+    }
+
+.message {
+    margin-bottom: 15px; /* Tăng khoảng cách giữa các tin nhắn */
+    padding: 8px 12px;
+    border-radius: 5px;
+    max-width: 70%;
+    display: block; /* Đảm bảo mỗi tin nhắn chiếm một dòng riêng */
+    word-wrap: break-word;
+    clear: both; /* Đảm bảo tin nhắn không bị dính nhau */
+}
+
+.sent {
+    background-color: #9acbd0; /* Màu xanh lá nhạt, dễ nhìn hơn */
+    color: white;
+    float: right; /* Căn phải cho tin nhắn gửi */
+    text-align: right;
+}
+
+.received {
+    background-color: #F2efe7; /* Màu xám ấm */
+    color: black;
+    float: left; /* Căn trái cho tin nhắn nhận */
+    text-align: left;
+}
+
+.time {
+    font-size: 0.8em;
+    color: #6c757d;
+}
+
+.read-status {
+    font-size: 0.8em;
+    margin-left: 5px;
+}
+
+.unread-status {
+    font-size: 0.8em;
+    margin-left: 5px;
+}
+
+.message.sent .read-status {
+    color: green;
+}
+
+.message.received .read-status {
+    color: gray;
+}
+
+.message.sent .unread-status {
+    color: gray;
+}
+
+.message.received .unread-status {
+    color: red;
+}
+
+.avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+}
 
 /* Responsive */
 @media (max-width: 767px) {
@@ -217,5 +310,13 @@ body {
 
     body.collapsed {
         overflow: hidden;
+    }
+
+    .chat-user-list {
+        max-height: 300px;
+    }
+
+    .chat-content {
+        max-height: 250px;
     }
 }

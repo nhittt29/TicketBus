@@ -1,5 +1,6 @@
 ﻿@model dynamic
 @using TicketBus.Models
+@using System.Collections.Generic
 
 @{
     Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
@@ -15,8 +16,10 @@
         <ol class="breadcrumb mb-4">
             <li class="breadcrumb-item active">Dashboard</li>
         </ol>
+
+        <!-- Thống kê nhanh -->
         <div class="row">
-            <div class="col-xl-3 col-md-6">
+            <div class="col-xl-4 col-md-6">
                 <div class="card bg-primary text-white mb-4">
                     <div class="card-body">Hãng xe chờ phê duyệt: @ViewBag.PendingBrandsCount</div>
                     <div class="card-footer d-flex align-items-center justify-content-between">
@@ -25,7 +28,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-xl-3 col-md-6">
+            <div class="col-xl-4 col-md-6">
                 <div class="card bg-warning text-white mb-4">
                     <div class="card-body">Tuyến xe chờ phê duyệt: @ViewBag.PendingBusRoutesCount</div>
                     <div class="card-footer d-flex align-items-center justify-content-between">
@@ -34,65 +37,82 @@
                     </div>
                 </div>
             </div>
-            <div class="col-xl-3 col-md-6">
-                <div class="card bg-success text-white mb-4">
-                    <div class="card-body">Xe chờ phê duyệt: @ViewBag.PendingCoachesCount</div>
-                    <div class="card-footer d-flex align-items-center justify-content-between">
-                        <a class="small text-white stretched-link" asp-controller="Coach" asp-action="PendingApproval" asp-area="Admin">Xem chi tiết</a>
-                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-md-6">
+            <div class="col-xl-4 col-md-6">
                 <div class="card bg-danger text-white mb-4">
-                    <div class="card-body">Tổng số thông báo: @(((List<Notification>)ViewBag.Notifications).Count)</div>
+                    <div class="card-body">Tổng số thông báo: @ViewBag.NotificationsCount</div>
                     <div class="card-footer d-flex align-items-center justify-content-between">
-                        <a class="small text-white stretched-link" href="#">Xem chi tiết</a>
+                        <a class="small text-white stretched-link" asp-controller="Notification" asp-action="Index" asp-area="Admin">Xem chi tiết</a>
                         <div class="small text-white"><i class="fas fa-angle-right"></i></div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Biểu đồ -->
         <div class="row">
             <div class="col-xl-6">
-                <div class="card mb-4">
+                <div class="card mb-4 chart-card">
                     <div class="card-header">
                         <i class="fas fa-chart-area me-1"></i>
                         Số tuyến xe theo trạng thái
                     </div>
-                    <div class="card-body"><canvas id="myAreaChart1" width="100%" height="40"></canvas></div>
+                    <div class="card-body"><canvas id="myAreaChart1"></canvas></div>
                 </div>
             </div>
             <div class="col-xl-6">
-                <div class="card mb-4">
+                <div class="card mb-4 chart-card">
                     <div class="card-header">
                         <i class="fas fa-chart-bar me-1"></i>
                         Số xe theo hãng xe
                     </div>
-                    <div class="card-body"><canvas id="myBarChart" width="100%" height="40"></canvas></div>
+                    <div class="card-body"><canvas id="myBarChart"></canvas></div>
                 </div>
             </div>
         </div>
         <div class="row">
             <div class="col-xl-6">
-                <div class="card mb-4">
+                <div class="card mb-4 chart-card">
                     <div class="card-header">
                         <i class="fas fa-chart-area me-1"></i>
                         Số thông báo theo tháng (6 tháng gần nhất)
                     </div>
-                    <div class="card-body"><canvas id="myAreaChart2" width="100%" height="40"></canvas></div>
+                    <div class="card-body"><canvas id="myAreaChart2"></canvas></div>
                 </div>
             </div>
             <div class="col-xl-6">
-                <div class="card mb-4">
+                <div class="card mb-4 chart-card">
                     <div class="card-header">
                         <i class="fas fa-chart-pie me-1"></i>
                         Tỷ lệ thông báo đã đọc/chưa đọc
                     </div>
-                    <div class="card-body"><canvas id="myPieChart" width="100%" height="40"></canvas></div>
+                    <div class="card-body"><canvas id="myPieChart"></canvas></div>
                 </div>
             </div>
         </div>
+        <div class="row">
+            <div class="col-xl-6">
+                <div class="card mb-4 chart-card">
+                    <div class="card-header">
+                        <i class="fas fa-chart-scatter me-1"></i>
+                        Giá vé trung bình theo khoảng cách tuyến xe
+                    </div>
+                    <div class="card-body">
+                        @if (ViewBag.DataScatterChart != null && ((List<Dictionary<string, object>>)ViewBag.DataScatterChart).Any())
+                        {
+                            <canvas id="scatterChart"></canvas>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info text-center">
+                                Không có dữ liệu để hiển thị biểu đồ giá vé theo khoảng cách.
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thông báo gần đây -->
         <div class="card mb-4">
             <div class="card-header">
                 <i class="fas fa-table me-1"></i>
@@ -142,6 +162,7 @@
 </main>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // Vẽ Area Chart 1: Số tuyến xe theo trạng thái
         const ctxArea1 = document.getElementById('myAreaChart1').getContext('2d');
@@ -158,6 +179,8 @@
                 }]
             },
             options: {
+                maintainAspectRatio: false,
+                responsive: true,
                 scales: {
                     y: {
                         beginAtZero: true,
@@ -191,6 +214,8 @@
                 }]
             },
             options: {
+                maintainAspectRatio: false,
+                responsive: true,
                 scales: {
                     y: {
                         beginAtZero: true,
@@ -224,6 +249,8 @@
                 }]
             },
             options: {
+                maintainAspectRatio: false,
+                responsive: true,
                 scales: {
                     y: {
                         beginAtZero: true,
@@ -263,6 +290,8 @@
                 }]
             },
             options: {
+                maintainAspectRatio: false,
+                responsive: true,
                 plugins: {
                     legend: {
                         position: 'top'
@@ -270,5 +299,41 @@
                 }
             }
         });
+
+        // Vẽ Scatter Chart: Giá vé trung bình theo khoảng cách
+        const ctxScatter = document.getElementById('scatterChart')?.getContext('2d');
+        if (ctxScatter) {
+            const scatterChart = new Chart(ctxScatter, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Giá vé trung bình theo khoảng cách',
+                        data: @Html.Raw(Json.Serialize(ViewBag.DataScatterChart)),
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Khoảng cách (km)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Giá vé trung bình (VNĐ)'
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
     </script>
 }

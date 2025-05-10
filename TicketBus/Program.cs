@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using TicketBus.Data;
+using TicketBus.Hubs;
 using TicketBus.Models;
 using TicketBus.Repositories;
 
@@ -40,6 +42,10 @@ builder.Services.ConfigureApplicationCookie(options =>
 // Đăng ký Repository
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 
+// Đăng ký SignalR
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<IUserIdProvider, NameUserIdProvider>(); // Thêm IUserIdProvider
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -72,6 +78,8 @@ app.MapControllerRoute(
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapHub<ChatHub>("/chatHub");
 
 app.MapRazorPages(); // Thêm để Identity UI (Razor Pages) hoạt động
 
@@ -126,7 +134,7 @@ using (var scope = app.Services.CreateScope())
             UserName = adminEmail,
             Email = adminEmail,
             FullName = "Quản trị viên",
-            PhoneNumber = "0000000000" // Giá trị mặc định cho PhoneNumber
+            PhoneNumber = "0000000000"
         };
         var createResult = await userManager.CreateAsync(adminUser, "Admin123/");
         if (createResult.Succeeded)
@@ -154,7 +162,7 @@ using (var scope = app.Services.CreateScope())
             UserName = nhanVienEmail,
             Email = nhanVienEmail,
             FullName = "Nhân viên",
-            PhoneNumber = "0000000000" // Giá trị mặc định cho PhoneNumber
+            PhoneNumber = "0000000000"
         };
         var createResult = await userManager.CreateAsync(nhanVienUser, "Nhanvien123/");
         if (createResult.Succeeded)

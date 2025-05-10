@@ -1,0 +1,271 @@
+﻿@model dynamic
+@{
+    Layout = "~/Areas/Brand/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "ChatBox";
+
+    // Lấy userId từ Claims
+    var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+}
+
+<!-- Liên kết file CSS -->
+<link rel="stylesheet" href="~/css/brand-styles.css" asp-append-version="true" />
+
+<!-- Header với icon quay về -->
+<div class="header-section">
+    <a asp-area="Brand" asp-controller="Home" asp-action="Index" class="back-link">
+        <i class="fas fa-arrow-left"></i>
+        Quay về trang quản lý
+    </a>
+</div>
+
+<div class="container-fluid px-4 py-5">
+    <!-- Thay mt-4 bằng py-5 để điều chỉnh khoảng cách trên và dưới -->
+    <div id="notificationArea" class="alert alert-info" style="display:none; position: fixed; top: 10px; right: 10px; z-index: 1000;"></div>
+
+    <div class="row">
+        <!-- Danh sách người dùng -->
+        <div class="col-xl-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Users</h5>
+                </div>
+                <div class="card-body chat-user-list">
+                    <ul id="userList" class="list-group">
+                        <!-- Danh sách người dùng sẽ được tải động -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Khu vực trò chuyện -->
+        <div class="col-xl-8">
+            <div id="chatBox" class="card mb-4 glow-on-hover">
+                <div class="card-header">
+                    <h5 id="chatWith" class="card-title">Chọn người để bắt đầu trò chuyện</h5>
+                </div>
+                <div class="card-body chat-content" id="messageContainer">
+                    <!-- Tin nhắn sẽ được hiển thị ở đây -->
+                    <div class="text-center mt-5" id="startChatMessage">
+                        <i class="fas fa-comments"></i> Bắt đầu trò chuyện!
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="input-group">
+                        <input type="text" id="messageInput" class="form-control" placeholder="Nhập tin nhắn..." disabled />
+                        <button class="btn btn-primary" id="sendButton" disabled>Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/chatHub")
+            .build();
+
+        let selectedUserId = null;
+        const currentUserId = "@userId"; // Lấy userId từ Razor
+
+        // Nhận tin nhắn
+        connection.on("ReceiveMessage", (senderId, senderName, message, sentDate) => {
+            console.log("Received message from:", senderId, "Message:", message); // Debug
+            const vietnamTime = moment.tz(sentDate, "Asia/Ho_Chi_Minh");
+            const dayOfWeek = vietnamTime.format("dddd"); // Lấy tên thứ (ví dụ: "Thứ 2")
+            const formattedTime = `${dayOfWeek}, ${vietnamTime.format("DD/MM/YYYY HH:mm")}`;
+            const messageElement = senderId === currentUserId
+                ? `<div class="message sent"><span class="time">${formattedTime} ✔</span><br><strong>${senderName}</strong><br>${message}</div>`
+                : `<div class="message received"><span class="time">${formattedTime} ✔</span><br><strong>${senderName}</strong><br>${message}</div>`;
+            document.getElementById("messageContainer").innerHTML += messageElement;
+            document.getElementById("messageContainer").scrollTop = document.getElementById("messageContainer").scrollHeight;
+            loadUsers();
+        });
+
+        // Nhận thay đổi trạng thái online
+        connection.on("UserStatusChanged", (userId, isOnline) => {
+            const userElement = document.querySelector(`[data-user-id="${userId}"]`);
+            if (userElement) {
+                const statusBadge = userElement.parentElement.querySelector(".badge");
+                statusBadge.textContent = isOnline ? "Online" : "Offline";
+                statusBadge.className = isOnline ? "badge bg-success" : "badge bg-secondary";
+            }
+        });
+
+        // Nhận thông báo
+        connection.on("ReceiveNotification", (message, createdDate) => {
+            const notificationArea = document.getElementById("notificationArea");
+            notificationArea.textContent = `${message} (${new Date(createdDate).toLocaleTimeString()})`;
+            notificationArea.style.display = "block";
+            setTimeout(() => notificationArea.style.display = "none", 5000); // Ẩn sau 5 giây
+        });
+
+        // Lấy danh sách người dùng
+        async function loadUsers() {
+            try {
+                const response = await fetch('/brand/home/getusers');
+                const users = await response.json();
+                console.log("Loaded users:", users); // Debug
+                if (users.error) {
+                    console.error(users.error);
+                    return;
+                }
+                const userList = document.getElementById("userList");
+                userList.innerHTML = "";
+                for (const user of users) {
+                    const hasUnread = await checkUnreadMessages(user.id);
+                    console.log(`User ${user.id} - Has unread: ${hasUnread}`); // Debug
+                    const li = document.createElement("li");
+                    li.className = "list-group-item d-flex justify-content-between align-items-center";
+                    li.innerHTML = `
+                        <div class="d-flex align-items-center" data-user-id="${user.id}">
+                            <div class="avatar me-2" style="background-color: ${getRandomColor()};">${user.fullName.charAt(0)}</div>
+                            <div>
+                                <div>${user.fullName}</div>
+                                <small class="text-muted">Thư ${Math.floor(Math.random() * 10)}</small>
+                            </div>
+                        </div>
+                        <div>
+                            ${hasUnread ? '<span class="badge bg-danger rounded-circle" style="width: 10px; height: 10px; display: inline-block;" data-unread></span>' : ''}
+                            <span class="badge ${user.isOnline ? 'bg-success' : 'bg-secondary'}">${user.isOnline ? "Online" : "Offline"}</span>
+                        </div>
+                    `;
+                    li.addEventListener("click", () => selectUser(user.id, user.fullName));
+                    userList.appendChild(li);
+                }
+            } catch (error) {
+                console.error("Lỗi khi tải danh sách người dùng:", error);
+            }
+        }
+
+        // Kiểm tra tin nhắn chưa đọc
+        async function checkUnreadMessages(receiverId) {
+            try {
+                const response = await fetch(`/brand/home/getchathistory?receiverId=${receiverId}`);
+                const messages = await response.json();
+                console.log(`Check unread for receiverId ${receiverId}:`, messages); // Debug
+                return messages.some(msg => msg.senderId === receiverId && !msg.isRead);
+            } catch (error) {
+                console.error("Lỗi khi kiểm tra tin nhắn chưa đọc:", error);
+                return false;
+            }
+        }
+
+        // Chọn người dùng để chat
+        function selectUser(userId, userName) {
+            selectedUserId = userId;
+            document.getElementById("chatWith").textContent = `Chat với ${userName}`;
+            document.getElementById("messageContainer").innerHTML = "";
+            document.getElementById("messageInput").disabled = false;
+            document.getElementById("sendButton").disabled = false;
+
+            // Kiểm tra và ẩn startChatMessage nếu tồn tại
+            const startChatMessage = document.getElementById("startChatMessage");
+            if (startChatMessage) {
+                startChatMessage.style.display = "none";
+            } else {
+                console.warn("startChatMessage element not found");
+            }
+
+            loadChatHistory(userId).then(() => {
+                // Gọi MarkAsRead khi mở cuộc trò chuyện
+                fetch(`/brand/home/markasread?receiverId=${userId}`, {
+                    method: 'POST'
+                }).then(response => response.json())
+                  .then(data => {
+                      if (data.success) {
+                          console.log(`Marked as read for receiverId: ${userId}`);
+                      }
+                  }).catch(err => console.error("Error marking as read:", err));
+
+                // Xóa chấm đỏ cho user đã chọn
+                const userElement = document.querySelector(`[data-user-id="${userId}"]`);
+                if (userElement) {
+                    const unreadBadge = userElement.parentElement.querySelector('[data-unread]');
+                    if (unreadBadge) {
+                        unreadBadge.remove();
+                    }
+                }
+            });
+        }
+
+        // Tải lịch sử chat
+        async function loadChatHistory(receiverId) {
+            try {
+                console.log("Loading chat history for receiverId:", receiverId); // Debug
+                const response = await fetch(`/brand/home/getchathistory?receiverId=${receiverId}`);
+                const messages = await response.json();
+                console.log("Chat history response:", messages); // Debug
+                if (messages.error) {
+                    console.error("Error loading chat history:", messages.error);
+                    return;
+                }
+                const container = document.getElementById("messageContainer");
+                container.innerHTML = "";
+                messages.forEach(msg => {
+                    console.log("Processing message:", msg); // Debug
+                    const vietnamTime = moment.tz(msg.sentDate, "Asia/Ho_Chi_Minh");
+                    const dayOfWeek = vietnamTime.format("dddd"); // Lấy tên thứ (ví dụ: "Thứ 2")
+                    const formattedTime = `${dayOfWeek}, ${vietnamTime.format("DD/MM/YYYY HH:mm")}`;
+                    const messageElement = msg.senderId === currentUserId
+                        ? `<div class="message sent"><span class="time">${formattedTime} ✔</span><br><strong>${msg.senderName}</strong><br>${msg.content}</div>`
+                        : `<div class="message received"><span class="time">${formattedTime} ✔</span><br><strong>${msg.senderName}</strong><br>${msg.content}</div>`;
+                    container.innerHTML += messageElement;
+                });
+                container.scrollTop = container.scrollHeight;
+            } catch (error) {
+                console.error("Error loading chat history:", error);
+            }
+        }
+
+        // Gửi tin nhắn
+        document.getElementById("sendButton").addEventListener("click", () => {
+            const message = document.getElementById("messageInput").value.trim();
+            if (message && selectedUserId) {
+                connection.invoke("SendMessage", currentUserId, selectedUserId, message)
+                    .then(() => {
+                        document.getElementById("messageInput").value = "";
+                    })
+                    .catch(err => console.error("Lỗi khi gửi tin nhắn:", err));
+            }
+        });
+
+        // Gửi tin nhắn khi nhấn Enter
+        document.getElementById("messageInput").addEventListener("keydown", (event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault(); // Ngăn chặn xuống dòng
+                const message = document.getElementById("messageInput").value.trim();
+                if (message && selectedUserId) {
+                    connection.invoke("SendMessage", currentUserId, selectedUserId, message)
+                        .then(() => {
+                            document.getElementById("messageInput").value = "";
+                        })
+                        .catch(err => console.error("Lỗi khi gửi tin nhắn bằng Enter:", err));
+                }
+            }
+        });
+
+        // Hàm tạo màu ngẫu nhiên cho avatar
+        function getRandomColor() {
+            const letters = "0123456789ABCDEF";
+            let color = "#";
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        // Khởi động kết nối và tải danh sách người dùng
+        connection.start()
+            .then(() => {
+                console.log("SignalR connected");
+                loadUsers();
+            })
+            .catch(err => console.error("Lỗi khi kết nối SignalR:", err));
+    </script>
+}

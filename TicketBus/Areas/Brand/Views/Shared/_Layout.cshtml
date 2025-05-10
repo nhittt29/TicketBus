@@ -32,11 +32,11 @@
                         </a>
                     }
                     <!-- Chuông thông báo -->
-                    <div class="notification-bell position-relative">
+                    <div class="notification-bell position-relative me-3">
                         <i class="fas fa-bell fa-lg text-light" id="notificationBell" style="cursor: pointer;"></i>
                         <span id="notificationCount" class="badge bg-danger position-absolute top-0 start-100 translate-middle rounded-pill" style="display: none;">0</span>
                         <!-- Dropdown thông báo -->
-                        <div class="notification-dropdown dropdown-menu p-0" id="notificationDropdown">
+                        <div class="notification-dropdown dropdown-menu p-0" id="notificationDropdown" style="min-width: 500px; max-height: 400px;">
                             <div class="dropdown-header bg-light p-2 d-flex justify-content-between align-items-center">
                                 <strong>Thông báo</strong>
                                 <a href="#" id="markAllAsRead" class="text-primary text-decoration-none">Đọc tất cả</a>
@@ -46,6 +46,22 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Icon Chat -->
+                    <div class="position-relative me-3">
+                        <a href="@Url.Action("Chat", "Home", new { area = "Brand" })" class="text-light chat-icon" title="Chat">
+                            <i class="fas fa-comments fa-lg"></i>
+                            <span id="chatUnreadCount" class="unread-badge"></span>
+                        </a>
+                    </div>
+                    <!-- Nút Logout -->
+                    <form class="d-inline" asp-area="Identity"
+                          asp-page="/Account/Logout"
+                          asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })"
+                          method="post">
+                        <button type="submit" class="btn btn-danger logout-btn">
+                            <i class="fas fa-sign-out-alt me-1"></i> Đăng xuất
+                        </button>
+                    </form>
                 </div>
             </div>
         </header>
@@ -80,8 +96,12 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
     <script>
         $(document).ready(function () {
+            // Lấy currentUserId từ Razor
+            const currentUserId = "@UserManager.GetUserId(User)";
+
             // Hàm tải danh sách thông báo
             function loadNotifications() {
                 $.ajax({
@@ -91,7 +111,6 @@
                         var notificationCount = data.unreadCount;
                         var notifications = data.notifications;
 
-                        // Cập nhật số lượng thông báo chưa đọc
                         var notificationCountElement = $('#notificationCount');
                         if (notificationCount > 0) {
                             notificationCountElement.text(notificationCount).show();
@@ -99,7 +118,6 @@
                             notificationCountElement.hide();
                         }
 
-                        // Cập nhật danh sách thông báo
                         var notificationList = $('#notificationList');
                         notificationList.empty();
 
@@ -108,7 +126,7 @@
                                 var messageText = notification.message || 'Không có nội dung thông báo.';
                                 var createdDate = new Date(notification.createdDate).toLocaleString('vi-VN');
                                 var notificationItem = $('<div class="notification-item"></div>')
-                                    .attr('data-id', notification.id); // Thêm data-id để xác định thông báo
+                                    .attr('data-id', notification.id);
                                 if (notification.isRead) {
                                     notificationItem.addClass('read');
                                 }
@@ -136,25 +154,20 @@
                 });
             }
 
-            // Tải thông báo khi trang được tải
             loadNotifications();
 
-            // Hiển thị/ẩn dropdown khi nhấn vào chuông
             $('#notificationBell').click(function (e) {
                 e.stopPropagation();
                 $('#notificationDropdown').toggleClass('show');
-                // Tải lại thông báo mỗi khi mở dropdown để đảm bảo cập nhật
                 loadNotifications();
             });
 
-            // Ẩn dropdown khi nhấn ra ngoài
             $(document).click(function (e) {
                 if (!$(e.target).closest('.notification-bell').length) {
                     $('#notificationDropdown').removeClass('show');
                 }
             });
 
-            // Xử lý sự kiện khi nhấn nút "Đã đọc" (sử dụng AJAX)
             $(document).on('submit', '.notification-item form', function (e) {
                 e.preventDefault();
                 var form = $(this);
@@ -168,11 +181,9 @@
                     success: function (response) {
                         console.log('Đánh dấu đã đọc thành công:', response);
                         if (response.success) {
-                            // Cập nhật giao diện: làm mờ thông báo và thay nút "Đã đọc" bằng text
                             notificationItem.addClass('read');
                             form.replaceWith('<span class="text-muted">Đã đọc</span>');
 
-                            // Cập nhật số lượng thông báo chưa đọc
                             var currentCount = parseInt($('#notificationCount').text()) || 0;
                             if (currentCount > 0) {
                                 currentCount--;
@@ -192,7 +203,6 @@
                 });
             });
 
-            // Xử lý sự kiện khi nhấn "Đọc tất cả"
             $('#markAllAsRead').click(function (e) {
                 e.preventDefault();
                 $.ajax({
@@ -203,7 +213,6 @@
                     },
                     success: function (response) {
                         if (response.success) {
-                            // Tải lại danh sách thông báo mà không hiển thị alert
                             loadNotifications();
                         } else {
                             console.log('Lỗi từ server:', response.message);
@@ -215,6 +224,59 @@
                     }
                 });
             });
+
+            function loadUnreadMessageCount() {
+                console.log("Loading unread message count...");
+                if (!currentUserId) {
+                    console.log("User not logged in, skipping loadUnreadMessageCount.");
+                    $('#chatUnreadCount').removeClass('show with-count').text(''); // Ẩn badge nếu không đăng nhập
+                    return;
+                }
+
+                $.ajax({
+                    url: '@Url.Action("GetUnreadMessageCount", "Home", new { area = "Brand" })',
+                    type: 'GET',
+                    success: function (data) {
+                        console.log("Unread message count response:", data);
+                        var unreadCount = data.unreadCount || 0;
+                        var chatUnreadCountElement = $('#chatUnreadCount');
+                        if (unreadCount > 0) {
+                            chatUnreadCountElement.addClass('show');
+                            chatUnreadCountElement.addClass('with-count').text(unreadCount);
+                            console.log("Badge should be visible with count:", unreadCount);
+                        } else {
+                            chatUnreadCountElement.removeClass('show with-count').text('');
+                            console.log("Badge hidden, count is:", unreadCount);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.log('Error loading unread message count:', status, error);
+                        console.log('Response:', xhr.responseText);
+                        console.log('URL attempted:', xhr.responseURL);
+                        // Ẩn badge nếu có lỗi
+                        $('#chatUnreadCount').removeClass('show with-count').text('');
+                    }
+                });
+            }
+
+            loadUnreadMessageCount();
+            setInterval(loadUnreadMessageCount, 30000);
+
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl("/chatHub")
+                .build();
+
+            connection.start()
+                .then(() => {
+                    console.log("SignalR connected for chat unread count");
+                    connection.on("ReceiveMessage", (senderId, senderName, message, sentDate) => {
+                        console.log("Received message from:", senderId, "Current user:", currentUserId, "Message:", message);
+                        if (senderId !== currentUserId) {
+                            loadUnreadMessageCount();
+                        }
+                    });
+                })
+                .catch(err => console.error("Lỗi khi kết nối SignalR cho chat unread count:", err));
         });
     </script>
     @RenderSection("Scripts", required: false)
