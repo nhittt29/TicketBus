@@ -424,6 +424,49 @@ namespace TicketBus.Migrations
                     b.ToTable("ChatMessages");
                 });
 
+            modelBuilder.Entity("TicketBus.Models.ChatRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("AcceptedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<bool>("IsAccepted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ReceiverId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ReceiverRole")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SenderId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("SenderName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReceiverId");
+
+                    b.HasIndex("SenderId");
+
+                    b.ToTable("ChatRequests");
+                });
+
             modelBuilder.Entity("TicketBus.Models.ChatRoom", b =>
                 {
                     b.Property<int>("Id")
@@ -438,6 +481,9 @@ namespace TicketBus.Migrations
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("RoomName")
                         .IsRequired()
@@ -6511,7 +6557,7 @@ namespace TicketBus.Migrations
                     b.HasOne("TicketBus.Models.Brand", "Brand")
                         .WithMany()
                         .HasForeignKey("IdBrand")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("TicketBus.Models.City", "EndCity")
@@ -6558,6 +6604,24 @@ namespace TicketBus.Migrations
                         .IsRequired();
 
                     b.Navigation("ChatRoom");
+
+                    b.Navigation("Receiver");
+
+                    b.Navigation("Sender");
+                });
+
+            modelBuilder.Entity("TicketBus.Models.ChatRequest", b =>
+                {
+                    b.HasOne("TicketBus.Models.ApplicationUser", "Receiver")
+                        .WithMany()
+                        .HasForeignKey("ReceiverId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("TicketBus.Models.ApplicationUser", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Receiver");
 

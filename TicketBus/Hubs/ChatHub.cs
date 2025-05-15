@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.SignalR;
-using Microsoft.AspNetCore.Identity;
 using TicketBus.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using TicketBus.Models;
 using System.Threading.Tasks;
 using System.Linq;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace TicketBus.Hubs
@@ -14,114 +14,178 @@ namespace TicketBus.Hubs
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<ChatHub> _logger;
-        private readonly RoleManager<IdentityRole> _roleManager;
 
-        public ChatHub(ApplicationDbContext context, UserManager<ApplicationUser> userManager, ILogger<ChatHub> logger, RoleManager<IdentityRole> roleManager)
+        public ChatHub(ApplicationDbContext context, UserManager<ApplicationUser> userManager, ILogger<ChatHub> logger)
         {
             _context = context;
             _userManager = userManager;
             _logger = logger;
-            _roleManager = roleManager;
+        }
+
+        public async Task RequestChatWithRole(string senderId, string receiverRole)
+        {
+            try
+            {
+                _logger.LogInformation("Yêu cầu chat với Role - SenderId: {SenderId}, ReceiverRole: {ReceiverRole}", senderId, receiverRole);
+
+                var sender = await _userManager.FindByIdAsync(senderId);
+                if (sender == null)
+                {
+                    _logger.LogWarning("Người gửi không tồn tại - SenderId: {SenderId}", senderId);
+                    return;
+                }
+
+                var chatRequest = new ChatRequest
+                {
+                    SenderId = senderId,
+                    SenderName = sender.FullName ?? "Unknown",
+                    ReceiverRole = receiverRole,
+                    CreatedDate = DateTime.UtcNow,
+                    IsAccepted = false
+                };
+
+                _context.ChatRequests.Add(chatRequest);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Tạo ChatRequest thành công - RequestId: {RequestId}", chatRequest.Id);
+
+                var usersInRole = await _userManager.GetUsersInRoleAsync(receiverRole);
+                foreach (var user in usersInRole.Where(u => u.IsOnline))
+                {
+                    await Clients.User(user.Id).SendAsync("ReceiveChatRequest", chatRequest.Id, senderId, chatRequest.SenderName, chatRequest.CreatedDate);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi yêu cầu chat với Role - SenderId: {SenderId}, ReceiverRole: {ReceiverRole}", senderId, receiverRole);
+                throw;
+            }
+        }
+
+        public async Task AcceptChatRequest(int requestId, string receiverId)
+        {
+            try
+            {
+                _logger.LogInformation("Chấp nhận yêu cầu chat - RequestId: {RequestId}, ReceiverId: {ReceiverId}", requestId, receiverId);
+
+                var request = await _context.ChatRequests.FindAsync(requestId);
+                if (request == null || request.IsAccepted)
+                {
+                    _logger.LogWarning("Yêu cầu không tồn tại hoặc đã được xử lý - RequestId: {RequestId}", requestId);
+                    return;
+                }
+
+                request.IsAccepted = true;
+                request.ReceiverId = receiverId;
+                request.AcceptedDate = DateTime.UtcNow; // Gán thời gian chấp nhận
+                await _context.SaveChangesAsync();
+
+                var sender = await _userManager.FindByIdAsync(request.SenderId);
+                var receiver = await _userManager.FindByIdAsync(receiverId);
+
+                if (sender == null || receiver == null)
+                {
+                    _logger.LogWarning("Người gửi hoặc người nhận không tồn tại - SenderId: {SenderId}, ReceiverId: {ReceiverId}", request.SenderId, receiverId);
+                    return;
+                }
+
+                await Clients.User(receiverId).SendAsync("ChatRequestHandled", requestId);
+                await Clients.User(receiverId).SendAsync("StartChatWithUser", request.SenderId, request.SenderName);
+                await Clients.User(request.SenderId).SendAsync("ChatRequestAccepted", new
+                {
+                    receiverId = receiverId,
+                    receiverName = receiver.FullName ?? "Admin",
+                    senderId = request.SenderId,
+                    senderName = request.SenderName
+                });
+                _logger.LogInformation("Chấp nhận yêu cầu chat thành công - RequestId: {RequestId}", requestId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi chấp nhận yêu cầu chat - RequestId: {RequestId}, ReceiverId: {ReceiverId}", requestId, receiverId);
+                throw;
+            }
         }
 
         public async Task SendMessage(string senderId, string receiverId, string message)
         {
-            _logger.LogInformation("Sending message - Sender: {SenderId}, Receiver: {ReceiverId}, Message: {Message}", senderId, receiverId, message);
-
-            // Kiểm tra sender và receiver
-            if (string.IsNullOrEmpty(senderId) || string.IsNullOrEmpty(receiverId) || string.IsNullOrEmpty(message))
+            try
             {
-                _logger.LogWarning("Invalid message data - Sender: {SenderId}, Receiver: {ReceiverId}, Message: {Message}", senderId, receiverId, message);
-                return;
-            }
+                _logger.LogInformation("Gửi tin nhắn - SenderId: {SenderId}, ReceiverId: {ReceiverId}, Message: {Message}", senderId, receiverId, message);
 
-            var sender = await _userManager.FindByIdAsync(senderId);
-            var receiver = await _userManager.FindByIdAsync(receiverId);
-
-            if (sender == null || receiver == null)
-            {
-                _logger.LogWarning("Sender or Receiver not found - Sender: {SenderId}, Receiver: {ReceiverId}", senderId, receiverId);
-                return;
-            }
-
-            // Kiểm tra role của sender
-            var senderRoles = await _userManager.GetRolesAsync(sender);
-            var isRestrictedRole = senderRoles.Any(r => new[] { "Brand", "Passenger", "NhanVien" }.Contains(r));
-            var receiverRoles = await _userManager.GetRolesAsync(receiver);
-            var isReceiverAdmin = receiverRoles.Any(r => r == "Admin");
-
-            if (isRestrictedRole && !isReceiverAdmin)
-            {
-                _logger.LogWarning("Restricted user {SenderId} attempted to send message to non-Admin {ReceiverId}", senderId, receiverId);
-                return; // Chỉ cho phép gửi đến Admin nếu là Brand, Passenger, hoặc NhanVien
-            }
-
-            // Tạo hoặc lấy chat room
-            var roomName = string.Join("-", new[] { senderId, receiverId }.OrderBy(x => x));
-            var chatRoom = await _context.ChatRooms
-                .Include(r => r.Messages)
-                .FirstOrDefaultAsync(r => r.RoomName == roomName) ?? new ChatRoom
+                var sender = await _userManager.FindByIdAsync(senderId);
+                var receiver = await _userManager.FindByIdAsync(receiverId);
+                if (sender == null || receiver == null)
                 {
-                    RoomName = roomName,
-                    CreatedDate = DateTime.UtcNow,
-                    CreatedBy = senderId
+                    _logger.LogWarning("Người gửi hoặc người nhận không tồn tại - SenderId: {SenderId}, ReceiverId: {ReceiverId}", senderId, receiverId);
+                    throw new ArgumentException("Người gửi hoặc người nhận không tồn tại trong hệ thống.");
+                }
+
+                var roomName = string.Join("-", new[] { senderId, receiverId }.OrderBy(x => x));
+                _logger.LogInformation("RoomName được tạo: {RoomName}", roomName);
+
+                var chatRoom = await _context.ChatRooms
+                    .FirstOrDefaultAsync(r => r.RoomName == roomName && !r.IsDeleted);
+                if (chatRoom == null)
+                {
+                    chatRoom = new ChatRoom
+                    {
+                        RoomName = roomName,
+                        CreatedDate = DateTime.UtcNow,
+                        CreatedBy = senderId,
+                        IsDeleted = false
+                    };
+                    _context.ChatRooms.Add(chatRoom);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Tạo mới ChatRoom thành công - RoomName: {RoomName}, ChatRoomId: {ChatRoomId}", roomName, chatRoom.Id);
+                }
+
+                var chatMessage = new ChatMessage
+                {
+                    ChatRoomId = chatRoom.Id,
+                    SenderId = senderId,
+                    ReceiverId = receiverId,
+                    Content = message,
+                    SentDate = DateTime.UtcNow,
+                    IsRead = false // Mặc định là chưa đọc
                 };
 
-            if (chatRoom.Id == 0) // Phòng mới
-            {
-                _context.ChatRooms.Add(chatRoom);
+                _context.ChatMessages.Add(chatMessage);
                 await _context.SaveChangesAsync();
-                _logger.LogInformation("Created new chat room - RoomName: {RoomName}, ChatRoomId: {ChatRoomId}", roomName, chatRoom.Id);
+                _logger.LogInformation("Lưu tin nhắn thành công - MessageId: {MessageId}, ChatRoomId: {ChatRoomId}", chatMessage.Id, chatRoom.Id);
+
+                var senderName = sender.FullName ?? sender.UserName ?? "Unknown";
+
+                // Gửi tin nhắn cho cả sender và receiver (kể cả khi offline)
+                await Clients.User(senderId).SendAsync("ReceiveMessage", senderId, senderName, message, chatMessage.SentDate, chatMessage.IsRead);
+                await Clients.User(receiverId).SendAsync("ReceiveMessage", senderId, senderName, message, chatMessage.SentDate, chatMessage.IsRead);
+
+                // Cập nhật số tin nhắn chưa đọc cho receiver (kể cả offline)
+                var unreadCount = await _context.ChatMessages
+                    .CountAsync(m => m.ReceiverId == receiverId && !m.IsRead);
+                await Clients.User(receiverId).SendAsync("UpdateUnreadCount", receiverId, unreadCount);
             }
-
-            // Tạo tin nhắn mới
-            var chatMessage = new ChatMessage
+            catch (Exception ex)
             {
-                ChatRoomId = chatRoom.Id,
-                SenderId = senderId,
-                ReceiverId = receiverId,
-                Content = message,
-                SentDate = DateTime.UtcNow,
-                IsRead = false // Đảm bảo tin nhắn mới có IsRead = false
-            };
-
-            chatRoom.Messages.Add(chatMessage);
-            await _context.SaveChangesAsync();
-            _logger.LogInformation("Message saved - MessageId: {MessageId}, ChatRoomId: {ChatRoomId}, IsRead: {IsRead}", chatMessage.Id, chatRoom.Id, chatMessage.IsRead);
-
-            var senderName = sender.FullName ?? "Unknown";
-            var sentDate = chatMessage.SentDate;
-
-            // Gửi tin nhắn đến cả sender và receiver
-            _logger.LogInformation("Sending message to receiverId: {ReceiverId} and senderId: {SenderId}", receiverId, senderId);
-            await Clients.User(receiverId).SendAsync("ReceiveMessage", senderId, senderName, message, sentDate);
-            await Clients.User(senderId).SendAsync("ReceiveMessage", senderId, senderName, message, sentDate);
-
-            _logger.LogInformation("Message sent successfully to Receiver: {ReceiverId} and Sender: {SenderId}", receiverId, senderId);
+                _logger.LogError(ex, "Lỗi khi gửi tin nhắn - SenderId: {SenderId}, ReceiverId: {ReceiverId}", senderId, receiverId);
+                throw new HubException($"Lỗi khi gửi tin nhắn: {ex.Message}");
+            }
         }
 
         public override async Task OnConnectedAsync()
         {
             var userId = Context.UserIdentifier;
-            _logger.LogInformation("OnConnectedAsync - Context.UserIdentifier: {UserIdentifier}", userId);
-            if (userId != null)
+            if (!string.IsNullOrEmpty(userId))
             {
                 var user = await _userManager.FindByIdAsync(userId);
                 if (user != null)
                 {
                     user.IsOnline = true;
                     await _context.SaveChangesAsync();
-                    await Clients.Others.SendAsync("UserStatusChanged", userId, true);
-                    _logger.LogInformation("User {UserId} connected with Context.UserIdentifier: {UserIdentifier}", userId, Context.UserIdentifier);
+                    _logger.LogInformation("Người dùng kết nối - UserId: {UserId}", userId);
+
+                    // Đồng bộ tin nhắn chưa đọc khi kết nối
+                    await SyncUnreadMessages(userId);
                 }
-                else
-                {
-                    _logger.LogWarning("User not found for UserIdentifier: {UserIdentifier}", userId);
-                }
-            }
-            else
-            {
-                _logger.LogWarning("Context.UserIdentifier is null on connection");
             }
             await base.OnConnectedAsync();
         }
@@ -129,19 +193,154 @@ namespace TicketBus.Hubs
         public override async Task OnDisconnectedAsync(Exception exception)
         {
             var userId = Context.UserIdentifier;
-            _logger.LogInformation("OnDisconnectedAsync - Context.UserIdentifier: {UserIdentifier}", userId);
-            if (userId != null)
+            if (!string.IsNullOrEmpty(userId))
             {
                 var user = await _userManager.FindByIdAsync(userId);
                 if (user != null)
                 {
                     user.IsOnline = false;
                     await _context.SaveChangesAsync();
-                    await Clients.Others.SendAsync("UserStatusChanged", userId, false);
-                    _logger.LogInformation("User {UserId} disconnected.", userId);
+                    _logger.LogInformation("Người dùng ngắt kết nối - UserId: {UserId}", userId);
                 }
             }
             await base.OnDisconnectedAsync(exception);
+        }
+
+        private async Task SyncUnreadMessages(string userId)
+        {
+            _logger.LogInformation("Đồng bộ tin nhắn chưa đọc - UserId: {UserId}", userId);
+
+            var roomNames = await _context.ChatRooms
+                .Where(r => r.RoomName.Contains(userId) && !r.IsDeleted)
+                .Select(r => r.RoomName)
+                .ToListAsync();
+
+            foreach (var roomName in roomNames)
+            {
+                var chatRoom = await _context.ChatRooms
+                    .Include(r => r.Messages)
+                    .FirstOrDefaultAsync(r => r.RoomName == roomName);
+
+                if (chatRoom != null)
+                {
+                    var unreadMessages = chatRoom.Messages
+                        .Where(m => m.ReceiverId == userId && !m.IsRead)
+                        .ToList();
+
+                    if (unreadMessages.Any())
+                    {
+                        var unreadCount = unreadMessages.Count;
+                        await Clients.User(userId).SendAsync("UpdateUnreadCount", userId, unreadCount);
+
+                        foreach (var message in unreadMessages)
+                        {
+                            var sender = await _userManager.FindByIdAsync(message.SenderId);
+                            var senderName = sender?.FullName ?? sender?.UserName ?? "Unknown";
+                            await Clients.User(userId).SendAsync("ReceiveMessage", message.SenderId, senderName, message.Content, message.SentDate, message.IsRead);
+                        }
+                    }
+                }
+            }
+        }
+
+        public async Task MarkAsRead(string userId, string senderId)
+        {
+            try
+            {
+                _logger.LogInformation("Đánh dấu tin nhắn đã đọc - UserId: {UserId}, SenderId: {SenderId}", userId, senderId);
+
+                var roomName = string.Join("-", new[] { userId, senderId }.OrderBy(x => x));
+                var chatRoom = await _context.ChatRooms
+                    .Include(r => r.Messages)
+                    .FirstOrDefaultAsync(r => r.RoomName == roomName && !r.IsDeleted);
+
+                if (chatRoom != null)
+                {
+                    var unreadMessages = chatRoom.Messages
+                        .Where(m => m.ReceiverId == userId && !m.IsRead)
+                        .ToList();
+
+                    if (unreadMessages.Any())
+                    {
+                        foreach (var message in unreadMessages)
+                        {
+                            message.IsRead = true;
+                        }
+                        await _context.SaveChangesAsync();
+
+                        var messageIds = unreadMessages.Select(m => m.Id).ToList();
+                        await Clients.User(userId).SendAsync("ReceiveMessageReadStatus", senderId, messageIds);
+                        await Clients.User(senderId).SendAsync("ReceiveMessageReadStatus", userId, messageIds);
+
+                        // Cập nhật số tin nhắn chưa đọc
+                        var newUnreadCount = await _context.ChatMessages
+                            .CountAsync(m => m.ReceiverId == userId && !m.IsRead);
+                        await Clients.User(userId).SendAsync("UpdateUnreadCount", userId, newUnreadCount);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi đánh dấu tin nhắn đã đọc - UserId: {UserId}, SenderId: {SenderId}", userId, senderId);
+                throw;
+            }
+        }
+
+        public async Task CheckUnreadMessages(string userId)
+        {
+            try
+            {
+                _logger.LogInformation("Kiểm tra tin nhắn chưa đọc - UserId: {UserId}", userId);
+
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                {
+                    _logger.LogWarning("Người dùng không tồn tại - UserId: {UserId}", userId);
+                    return;
+                }
+
+                var unreadCount = await _context.ChatMessages
+                    .CountAsync(m => m.ReceiverId == userId && !m.IsRead);
+                await Clients.User(userId).SendAsync("UpdateUnreadCount", userId, unreadCount);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi kiểm tra tin nhắn chưa đọc - UserId: {UserId}", userId);
+                throw;
+            }
+        }
+
+        public async Task UserOnline(string userId)
+        {
+            try
+            {
+                _logger.LogInformation("Người dùng online - UserId: {UserId}", userId);
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user != null)
+                {
+                    user.IsOnline = true;
+                    await _context.SaveChangesAsync();
+                    if (await _userManager.IsInRoleAsync(user, "Admin"))
+                    {
+                        var acceptedRequests = await _context.ChatRequests
+                            .Where(r => r.ReceiverId == userId && r.IsAccepted)
+                            .Select(r => new
+                            {
+                                id = r.SenderId,
+                                fullName = r.SenderName,
+                                isOnline = _context.Users.Any(u => u.Id == r.SenderId && u.IsOnline)
+                            })
+                            .ToListAsync();
+                        await Clients.User(userId).SendAsync("UpdateAcceptedUsers", acceptedRequests);
+                    }
+                    await SyncUnreadMessages(userId); // Đồng bộ tin nhắn khi online
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi xử lý người dùng online - UserId: {UserId}", userId);
+                throw;
+            }
         }
     }
 }

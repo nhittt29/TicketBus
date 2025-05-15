@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Identity;
 using System.Threading.Tasks;
 using TicketBus.Models.ViewModels;
 using System.Linq;
+using Microsoft.AspNetCore.SignalR;
+using TicketBus.Hubs;
 
 namespace TicketBus.Areas.Brand.Controllers
 {
@@ -19,13 +21,15 @@ namespace TicketBus.Areas.Brand.Controllers
         private readonly ILogger<HomeController> _logger;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly IHubContext<ChatHub> _hubContext;
 
-        public HomeController(ApplicationDbContext context, ILogger<HomeController> logger, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+        public HomeController(ApplicationDbContext context, ILogger<HomeController> logger, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, IHubContext<ChatHub> hubContext)
         {
             _context = context;
             _logger = logger;
             _userManager = userManager;
             _roleManager = roleManager;
+            _hubContext = hubContext;
         }
 
         public async Task<IActionResult> Index()
@@ -50,7 +54,6 @@ namespace TicketBus.Areas.Brand.Controllers
             return View();
         }
 
-        // GET: /Brand/Home/Chat
         public IActionResult Chat()
         {
             return View();
@@ -65,7 +68,6 @@ namespace TicketBus.Areas.Brand.Controllers
                 return Json(new { error = "Không thể xác định người dùng." });
             }
 
-            // Lấy role của người dùng hiện tại
             var user = await _userManager.FindByIdAsync(userId);
             var roles = await _userManager.GetRolesAsync(user);
             var isRestrictedRole = roles.Any(r => new[] { "Brand", "Passenger", "NhanVien" }.Contains(r));
@@ -79,7 +81,7 @@ namespace TicketBus.Areas.Brand.Controllers
                     isOnline = u.IsOnline
                 }).ToList()
                 : await _userManager.Users
-                    .Where(u => u.Id != userId) // Loại trừ người dùng hiện tại
+                    .Where(u => u.Id != userId)
                     .Select(u => new
                     {
                         id = u.Id,
@@ -104,19 +106,18 @@ namespace TicketBus.Areas.Brand.Controllers
             var roomName = string.Join("-", new[] { userId, receiverId }.OrderBy(x => x));
             _logger.LogInformation("GetChatHistory: Fetching chat room with RoomName: {RoomName}, userId: {UserId}, receiverId: {ReceiverId}", roomName, userId, receiverId);
 
+            // Chỉ lấy ChatRoom với IsDeleted = false
             var chatRoom = await _context.ChatRooms
                 .Include(r => r.Messages)
-                .FirstOrDefaultAsync(r => r.RoomName == roomName);
+                .FirstOrDefaultAsync(r => r.RoomName == roomName && !r.IsDeleted);
 
             if (chatRoom == null)
             {
-                _logger.LogWarning("GetChatHistory: Chat room not found for RoomName: {RoomName}", roomName);
+                _logger.LogWarning("GetChatHistory: Chat room not found or deleted for RoomName: {RoomName}", roomName);
                 return Json(new List<ChatMessageViewModel>());
             }
 
-            // Không tự động cập nhật IsRead ở đây, chỉ lấy dữ liệu
-            var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"); // Windows
-            // Nếu dùng Linux, thay bằng: TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
+            var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
 
             var messages = chatRoom.Messages
                 .OrderBy(m => m.SentDate)
@@ -125,7 +126,7 @@ namespace TicketBus.Areas.Brand.Controllers
                     senderId = m.SenderId,
                     senderName = _context.Users.FirstOrDefault(u => u.Id == m.SenderId)?.FullName ?? "Unknown",
                     content = m.Content,
-                    sentDate = TimeZoneInfo.ConvertTimeFromUtc(m.SentDate, vietnamTimeZone), // Chuyển đổi sang múi giờ Việt Nam
+                    sentDate = TimeZoneInfo.ConvertTimeFromUtc(m.SentDate, vietnamTimeZone),
                     isRead = m.IsRead
                 }).ToList();
 
@@ -151,11 +152,11 @@ namespace TicketBus.Areas.Brand.Controllers
             var roomName = string.Join("-", new[] { userId, receiverId }.OrderBy(x => x));
             var chatRoom = await _context.ChatRooms
                 .Include(r => r.Messages)
-                .FirstOrDefaultAsync(r => r.RoomName == roomName);
+                .FirstOrDefaultAsync(r => r.RoomName == roomName && !r.IsDeleted);
 
             if (chatRoom == null)
             {
-                _logger.LogWarning("MarkAsRead: Chat room not found for RoomName: {RoomName}", roomName);
+                _logger.LogWarning("MarkAsRead: Chat room not found or deleted for RoomName: {RoomName}", roomName);
                 return Json(new { success = false });
             }
 
@@ -178,35 +179,133 @@ namespace TicketBus.Areas.Brand.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> GetAcceptedAdmins()
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("GetAcceptedAdmins: UserId is null or empty.");
+                return Json(new { error = "Không thể xác định người dùng." });
+            }
+
+            _logger.LogInformation("GetAcceptedAdmins: Fetching chat requests for UserId: {UserId}", userId);
+
+            var chatRequests = await _context.ChatRequests
+                .Where(r => r.SenderId == userId && r.IsAccepted)
+                .ToListAsync();
+
+            _logger.LogInformation("GetAcceptedAdmins: Found {Count} accepted chat requests for UserId: {UserId}", chatRequests.Count, userId);
+            foreach (var request in chatRequests)
+            {
+                _logger.LogInformation("GetAcceptedAdmins: ChatRequest - SenderId: {SenderId}, ReceiverId: {ReceiverId}, IsAccepted: {IsAccepted}", request.SenderId, request.ReceiverId, request.IsAccepted);
+            }
+
+            var acceptedRequests = chatRequests
+                .Select(r =>
+                {
+                    var admin = _context.Users.FirstOrDefault(u => u.Id == r.ReceiverId);
+                    var roomName = string.Join("-", new[] { userId, r.ReceiverId }.OrderBy(x => x));
+                    // Ưu tiên ChatRoom mới nhất và không bị xóa
+                    var chatRoom = _context.ChatRooms
+                        .Where(cr => cr.RoomName == roomName && !cr.IsDeleted)
+                        .OrderByDescending(cr => cr.CreatedDate)
+                        .FirstOrDefault();
+                    _logger.LogInformation("GetAcceptedAdmins: Checking ChatRoom for RoomName: {RoomName}, Exists: {Exists}", roomName, chatRoom != null);
+                    return new
+                    {
+                        adminId = r.ReceiverId,
+                        adminName = admin != null ? (admin.FullName ?? admin.UserName ?? "Admin") : "Admin",
+                        hasChatRoom = chatRoom != null
+                    };
+                })
+                .Where(r => r.hasChatRoom)
+                .Select(r => new { r.adminId, r.adminName })
+                .ToList();
+
+            _logger.LogInformation("GetAcceptedAdmins: Loaded {Count} accepted admins for UserId: {UserId}.", acceptedRequests.Count, userId);
+            return Json(acceptedRequests);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteChat(string receiverId)
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(receiverId))
+            {
+                _logger.LogWarning("DeleteChat: Invalid user info - userId: {UserId}, receiverId: {ReceiverId}.", userId, receiverId);
+                return Json(new { success = false, message = "Thông tin người dùng không hợp lệ." });
+            }
+
+            try
+            {
+                var roomName = string.Join("-", new[] { userId, receiverId }.OrderBy(x => x));
+                var chatRoom = await _context.ChatRooms
+                    .FirstOrDefaultAsync(r => r.RoomName == roomName && !r.IsDeleted);
+
+                if (chatRoom == null)
+                {
+                    _logger.LogWarning("DeleteChat: Chat room not found or already deleted for RoomName: {RoomName}.", roomName);
+                    return Json(new { success = false, message = "Đoạn chat không tồn tại." });
+                }
+
+                chatRoom.IsDeleted = true;
+
+                var chatRequest = await _context.ChatRequests
+                    .FirstOrDefaultAsync(r => (r.SenderId == userId && r.ReceiverId == receiverId) || (r.SenderId == receiverId && r.ReceiverId == userId));
+                if (chatRequest != null)
+                {
+                    _context.ChatRequests.Remove(chatRequest);
+                }
+
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("DeleteChat: Chat marked as deleted for RoomName: {RoomName}.", roomName);
+
+                await _hubContext.Clients.User(userId).SendAsync("ChatDeleted", receiverId);
+                await _hubContext.Clients.User(receiverId).SendAsync("ChatDeleted", userId);
+
+                return Json(new { success = true, message = "Đã xóa đoạn chat thành công." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "DeleteChat: Error occurred while deleting chat for RoomName: {RoomName}.", string.Join("-", new[] { userId, receiverId }.OrderBy(x => x)));
+                return Json(new { success = false, message = "Có lỗi xảy ra khi xóa đoạn chat. Vui lòng thử lại." });
+            }
+        }
+
+        [HttpGet]
         public async Task<IActionResult> GetApprovedCoaches()
         {
             var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
             {
+                _logger.LogWarning("GetApprovedCoaches: UserId is null or empty.");
                 return Json(new { coaches = new List<object>() });
             }
 
             var brand = await _context.Brands
                 .AsNoTracking()
-                .FirstOrDefaultAsync(b => b.UserId == userId && b.State == BrandState.HoatDong);
+                .FirstOrDefaultAsync(b => b.UserId == userId);
 
             if (brand == null)
             {
+                _logger.LogWarning("GetApprovedCoaches: Brand not found for UserId: {UserId}.", userId);
                 return Json(new { coaches = new List<object>() });
             }
 
             var coaches = await _context.Coaches
+                .AsNoTracking()
                 .Where(c => c.IdBrand == brand.IdBrand && c.State == CoachState.DaPheDuyet)
                 .Include(c => c.VehicleType)
                 .Select(c => new
                 {
                     coachCode = c.CoachCode,
                     numberPlate = c.NumberPlate,
-                    vehicleType = c.VehicleType != null ? c.VehicleType.NameType : null,
-                    state = (int)c.State
+                    vehicleType = c.VehicleType != null ? c.VehicleType.NameType : "N/A",
+                    state = c.State
                 })
                 .ToListAsync();
 
+            _logger.LogInformation("GetApprovedCoaches: Loaded {Count} approved coaches for UserId {UserId}.", coaches.Count, userId);
             return Json(new { coaches });
         }
 
@@ -333,6 +432,24 @@ namespace TicketBus.Areas.Brand.Controllers
 
             _logger.LogInformation("GetUnreadMessageCount: Total unread messages for UserId {UserId} is {UnreadCount}", userId, unreadCount);
             return Json(new { unreadCount });
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Brand")]
+        public async Task<IActionResult> GetUserName(string userId)
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Json(new { error = "UserId không hợp lệ." });
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return Json(new { error = "Người dùng không tồn tại." });
+            }
+
+            return Json(new { fullName = user.FullName ?? user.UserName ?? "Brand" });
         }
     }
 }

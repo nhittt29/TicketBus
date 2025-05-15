@@ -37,6 +37,7 @@ namespace TicketBus.Data
         //Khung chat
         public DbSet<ChatRoom> ChatRooms { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
+        public DbSet<ChatRequest> ChatRequests { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -1102,6 +1103,7 @@ namespace TicketBus.Data
             modelBuilder.Entity<ScheduleDetails>().HasKey(sd => sd.IdSchedule);
             modelBuilder.Entity<ChatRoom>().HasKey(cr => cr.Id);
             modelBuilder.Entity<ChatMessage>().HasKey(cm => cm.Id);
+            modelBuilder.Entity<ChatRequest>().HasKey(cr => cr.Id);
 
             // Cấu hình mối quan hệ
             // Brand và Coach (1-N)
@@ -1150,7 +1152,8 @@ namespace TicketBus.Data
             modelBuilder.Entity<BusRoute>()
                 .HasOne(r => r.Brand)
                 .WithMany()
-                .HasForeignKey(r => r.IdBrand);
+                .HasForeignKey(r => r.IdBrand)
+                .OnDelete(DeleteBehavior.NoAction);
 
             // BusRoute và StartCity
             modelBuilder.Entity<BusRoute>()
@@ -1349,7 +1352,7 @@ namespace TicketBus.Data
                 .HasMany(c => c.Messages)
                 .WithOne(m => m.ChatRoom)
                 .HasForeignKey(m => m.ChatRoomId)
-                .OnDelete(DeleteBehavior.NoAction); // Thêm để tránh xóa cascade
+                .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<ChatRoom>()
                 .HasMany(c => c.Participants)
@@ -1359,7 +1362,6 @@ namespace TicketBus.Data
                 .Property(m => m.SentDate)
                 .HasDefaultValueSql("GETDATE()");
 
-            // Thêm chỉ mục để cải thiện hiệu suất
             modelBuilder.Entity<ChatMessage>()
                 .HasIndex(cm => cm.ChatRoomId);
 
@@ -1369,7 +1371,6 @@ namespace TicketBus.Data
             modelBuilder.Entity<ChatMessage>()
                 .HasIndex(cm => cm.ReceiverId);
 
-            // Cấu hình mối quan hệ của ChatMessage với ApplicationUser
             modelBuilder.Entity<ChatMessage>()
                 .HasOne(cm => cm.Sender)
                 .WithMany()
@@ -1381,6 +1382,27 @@ namespace TicketBus.Data
                 .WithMany()
                 .HasForeignKey(cm => cm.ReceiverId)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            // ChatRequest
+            modelBuilder.Entity<ChatRequest>()
+                .HasOne(cr => cr.Sender)
+                .WithMany()
+                .HasForeignKey(cr => cr.SenderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ChatRequest>()
+                .HasOne(cr => cr.Receiver)
+                .WithMany()
+                .HasForeignKey(cr => cr.ReceiverId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<ChatRequest>()
+                .Property(cr => cr.ReceiverId)
+                .IsRequired(false);
+
+            modelBuilder.Entity<ChatRequest>()
+                .Property(cr => cr.CreatedDate)
+                .HasDefaultValueSql("GETDATE()");
         }
     }
 }

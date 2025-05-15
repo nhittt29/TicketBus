@@ -1,8 +1,10 @@
-﻿/* Header với icon quay về */
+﻿/* Header quay về trang quản lý */
 .header-section {
+    display: flex;
+    align-items: center;
     background-color: #007bff;
     padding: 10px 20px;
-    border-bottom: 1px solid #0056b3;
+    color: #fff;
 }
 
 .back-link {
@@ -32,14 +34,104 @@ body {
 /* Header */
 .brand-header {
     background-color: #0d6efd;
-    padding: 1rem 2rem;
+    padding: 0.75rem 1.5rem; /* Giảm padding */
     color: white;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
+    .brand-header .header-content {
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
     .brand-header h1 {
-        font-size: 1.75rem;
+        font-size: 1.25rem; /* Giảm font-size */
         margin: 0;
+        margin-right: 15px; /* Giảm margin-right */
+    }
+
+.header-actions {
+    display: flex;
+    align-items: center;
+}
+
+.chat-icon {
+    position: relative;
+    color: white;
+    text-decoration: none;
+    margin-right: 8px; /* Giảm margin-right */
+}
+
+    .chat-icon i {
+        font-size: 1.25rem; /* Giảm font-size */
+    }
+
+.unread-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 10px;
+    height: 10px;
+    background-color: red;
+    border-radius: 50%;
+    border: 1px solid white;
+    display: none;
+}
+
+    .unread-badge.show {
+        display: inline-block;
+    }
+
+    .unread-badge.with-count {
+        width: auto;
+        min-width: 16px;
+        height: 16px;
+        line-height: 16px;
+        font-size: 0.65rem;
+        color: white;
+        text-align: center;
+        padding: 0 4px;
+        background-color: red;
+        border-radius: 8px;
+    }
+
+.notification-bell {
+    position: relative;
+    margin-right: 8px;
+}
+
+    .notification-bell .badge {
+        font-size: 0.65rem;
+        background-color: red;
+        color: white;
+        padding: 1px 5px;
+        border-radius: 50%;
+        position: absolute;
+        top: -4px;
+        right: -4px;
+    }
+
+.logout-btn {
+    /* Xóa định nghĩa màu để ưu tiên inline style từ _Layout.cshtml */
+    border: none;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.85rem;
+    color: white;
+    text-decoration: none;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+    .logout-btn:hover {
+        /* Xóa định nghĩa màu hover để ưu tiên inline style */
+        transform: translateY(-1px);
+    }
+
+    .logout-btn i {
+        margin-right: 0.4rem;
     }
 
 /* Sidebar + nội dung */
@@ -108,7 +200,7 @@ body {
 }
 
     .btn-primary:hover {
-        background-color: #3c8788; /* Tông màu tối hơn khi hover */
+        background-color: #3c8788;
         transform: translateY(-2px);
     }
 
@@ -116,6 +208,53 @@ body {
     border-color: #0d6efd;
     color: #0d6efd;
 }
+
+.btn-secondary {
+    background-color: #6c757d;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    font-size: 14px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+    .btn-secondary:hover {
+        background-color: #5a6268;
+        transform: translateY(-2px);
+    }
+
+.btn-danger {
+    background-color: #dc3545;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    font-size: 14px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+    .btn-danger:hover {
+        background-color: #c82333;
+        transform: translateY(-2px);
+    }
+
+.btn-success {
+    background-color: #28a745;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    font-size: 14px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+    .btn-success:hover {
+        background-color: #218838;
+        transform: translateY(-2px);
+    }
+
+    .btn-success:disabled {
+        background-color: #6c757d;
+        cursor: not-allowed;
+    }
 
 /* Footer */
 .brand-footer {
@@ -126,14 +265,6 @@ body {
 }
 
 /* Notification bell */
-.notification-bell {
-    position: relative;
-}
-
-    .notification-bell .badge {
-        font-size: 0.75rem;
-    }
-
 .notification-dropdown {
     display: none;
     position: absolute;
@@ -186,49 +317,6 @@ body {
         margin-left: auto;
     }
 
-/* Icon Chat */
-.chat-icon {
-    margin-left: 1rem;
-    cursor: pointer;
-    transition: color 0.3s ease;
-    position: relative; /* Để định vị dấu chấm đỏ */
-}
-
-    .chat-icon:hover {
-        color: #ffffff; /* Giữ màu trắng hoặc thêm hiệu ứng khác */
-    }
-
-    .chat-icon i {
-        font-size: 1.5rem; /* Điều chỉnh kích thước icon */
-    }
-
-    .chat-icon .unread-badge {
-        position: absolute;
-        top: -5px;
-        right: -5px;
-        width: 10px;
-        height: 10px;
-        background-color: #dc3545; /* Màu đỏ */
-        border-radius: 50%;
-        display: none; /* Ẩn mặc định */
-    }
-
-        .chat-icon .unread-badge.show {
-            display: inline-block; /* Hiện khi có tin nhắn chưa đọc */
-        }
-
-        /* Nếu muốn hiển thị số lượng tin nhắn */
-        .chat-icon .unread-badge.with-count {
-            width: auto;
-            min-width: 18px;
-            height: 18px;
-            line-height: 18px;
-            font-size: 0.75rem;
-            color: white;
-            text-align: center;
-            padding: 0 5px;
-        }
-
 /* Chat styles */
 .chat-user-list {
     max-height: 600px;
@@ -241,27 +329,51 @@ body {
     padding: 10px;
 }
 
+#chatBox {
+    border-radius: 10px;
+    background-color: white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    transition: none;
+}
+
+    #chatBox:hover {
+        transform: none;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    #chatBox .card-header {
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #ddd;
+    }
+
+        #chatBox .card-header .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+            margin-left: 0.5rem;
+        }
+
 .message {
-    margin-bottom: 15px; /* Tăng khoảng cách giữa các tin nhắn */
+    margin-bottom: 15px;
     padding: 8px 12px;
     border-radius: 5px;
     max-width: 70%;
-    display: block; /* Đảm bảo mỗi tin nhắn chiếm một dòng riêng */
+    display: block;
     word-wrap: break-word;
-    clear: both; /* Đảm bảo tin nhắn không bị dính nhau */
+    clear: both;
 }
 
 .sent {
-    background-color: #9acbd0; /* Màu xanh lá nhạt, dễ nhìn hơn */
+    background-color: #9acbd0;
     color: white;
-    float: right; /* Căn phải cho tin nhắn gửi */
+    float: right;
     text-align: right;
 }
 
 .received {
-    background-color: #f2efe7; /* Màu xám ấm */
+    background-color: #f2efe7;
     color: black;
-    float: left; /* Căn trái cho tin nhắn nhận */
+    float: left;
     text-align: left;
 }
 
@@ -307,22 +419,54 @@ body {
     font-weight: bold;
 }
 
-/* Logout button styles */
-.logout-btn {
-    background-color: #dc3545;
-    border: none;
-    padding: 0.375rem 1rem;
-    font-size: 0.9rem;
-    transition: background-color 0.3s ease, transform 0.2s ease;
+/* Admin List styles */
+#adminList {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 10px;
 }
 
-    .logout-btn:hover {
-        background-color: #c82333;
-        transform: translateY(-2px);
+    #adminList div {
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 5px;
+        transition: background-color 0.3s ease;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 
-    .logout-btn i {
-        margin-right: 0.5rem;
+        #adminList div:hover {
+            background-color: #e0f7fa;
+        }
+
+    #adminList p {
+        color: #6c757d;
+        font-style: italic;
+    }
+
+.unread-count {
+    background-color: red;
+    color: white;
+    border-radius: 50%;
+    padding: 0 5px;
+    font-size: 12px;
+    margin-left: 5px;
+}
+
+/* Thêm style cho chấm đỏ bên cạnh nút "Xóa đoạn chat" */
+.unread-dot {
+    display: none; /* Ẩn mặc định */
+    width: 8px; /* Điều chỉnh kích thước nhỏ hơn để phù hợp với nút */
+    height: 8px;
+    background-color: red;
+    border-radius: 50%;
+    margin-left: 5px;
+    vertical-align: middle; /* Căn giữa với nút */
+}
+
+    .unread-dot.show {
+        display: inline-block; /* Hiển thị khi có class "show" */
     }
 
 /* Responsive */
@@ -339,17 +483,45 @@ body {
         width: 100%;
     }
 
-    .brand-header .header-content {
-        flex-direction: column;
-        align-items: flex-start;
+    .brand-header {
+        padding: 0.5rem 1rem;
     }
+
+        .brand-header h1 {
+            font-size: 1rem;
+        }
+
+        .brand-header .header-content {
+            flex-direction: column;
+            align-items: flex-start;
+        }
 
     .chat-icon {
         margin-left: 0;
-        margin-top: 1rem;
+        margin-top: 0.75rem;
+    }
+
+    .logout-btn {
+        padding: 0.2rem 0.5rem;
+        font-size: 0.8rem;
     }
 
     .chat-content {
         max-height: 250px;
     }
+
+    #adminList {
+        max-height: 200px;
+    }
+
+    #chatBox .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+        #chatBox .card-header .btn-sm {
+            width: 100%;
+            margin-left: 0;
+        }
 }

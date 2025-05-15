@@ -58,7 +58,9 @@
                           asp-page="/Account/Logout"
                           asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })"
                           method="post">
-                        <button type="submit" class="btn btn-danger logout-btn">
+                        <button type="submit" class="btn btn-danger logout-btn" style="background-color: #dc3545 !important; border: none !important; color: white !important; transition: background-color 0.3s ease, transform 0.2s ease;"
+                                onmouseover="this.style.backgroundColor='#c82333'; this.style.transform='translateY(-1px);'"
+                                onmouseout="this.style.backgroundColor='#dc3545'; this.style.transform='translateY(0)';">
                             <i class="fas fa-sign-out-alt me-1"></i> Đăng xuất
                         </button>
                     </form>
@@ -225,11 +227,21 @@
                 });
             });
 
+            let unreadCounts = {}; // Biến để theo dõi số tin nhắn chưa đọc
+
+            function updateChatIcon() {
+                const chatUnreadCountElement = $('#chatUnreadCount');
+                const totalUnread = Object.values(unreadCounts).reduce((sum, count) => sum + count, 0);
+                if (totalUnread > 0) {
+                    chatUnreadCountElement.addClass('show with-count').text(totalUnread);
+                } else {
+                    chatUnreadCountElement.removeClass('show with-count').text('');
+                }
+            }
+
             function loadUnreadMessageCount() {
-                console.log("Loading unread message count...");
                 if (!currentUserId) {
-                    console.log("User not logged in, skipping loadUnreadMessageCount.");
-                    $('#chatUnreadCount').removeClass('show with-count').text(''); // Ẩn badge nếu không đăng nhập
+                    $('#chatUnreadCount').removeClass('show with-count').text('');
                     return;
                 }
 
@@ -237,23 +249,12 @@
                     url: '@Url.Action("GetUnreadMessageCount", "Home", new { area = "Brand" })',
                     type: 'GET',
                     success: function (data) {
-                        console.log("Unread message count response:", data);
                         var unreadCount = data.unreadCount || 0;
-                        var chatUnreadCountElement = $('#chatUnreadCount');
-                        if (unreadCount > 0) {
-                            chatUnreadCountElement.addClass('show');
-                            chatUnreadCountElement.addClass('with-count').text(unreadCount);
-                            console.log("Badge should be visible with count:", unreadCount);
-                        } else {
-                            chatUnreadCountElement.removeClass('show with-count').text('');
-                            console.log("Badge hidden, count is:", unreadCount);
-                        }
+                        unreadCounts[currentUserId] = unreadCount; // Cập nhật vào unreadCounts
+                        updateChatIcon();
                     },
                     error: function (xhr, status, error) {
                         console.log('Error loading unread message count:', status, error);
-                        console.log('Response:', xhr.responseText);
-                        console.log('URL attempted:', xhr.responseURL);
-                        // Ẩn badge nếu có lỗi
                         $('#chatUnreadCount').removeClass('show with-count').text('');
                     }
                 });
@@ -270,9 +271,16 @@
                 .then(() => {
                     console.log("SignalR connected for chat unread count");
                     connection.on("ReceiveMessage", (senderId, senderName, message, sentDate) => {
-                        console.log("Received message from:", senderId, "Current user:", currentUserId, "Message:", message);
                         if (senderId !== currentUserId) {
-                            loadUnreadMessageCount();
+                            $.ajax({
+                                url: '@Url.Action("GetUnreadMessageCount", "Home", new { area = "Brand" })',
+                                type: 'GET',
+                                success: function (data) {
+                                    var unreadCount = data.unreadCount || 0;
+                                    unreadCounts[currentUserId] = unreadCount;
+                                    updateChatIcon();
+                                }
+                            });
                         }
                     });
                 })
