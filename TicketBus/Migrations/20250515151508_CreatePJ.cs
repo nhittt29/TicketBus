@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace TicketBus.Migrations
 {
     /// <inheritdoc />
-    public partial class UpdateScheduleDetails : Migration
+    public partial class CreatePJ : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -35,6 +35,7 @@ namespace TicketBus.Migrations
                     FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsOnline = table.Column<bool>(type: "bit", nullable: false),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -52,6 +53,21 @@ namespace TicketBus.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ChatRooms",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    RoomName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ChatRooms", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -100,20 +116,6 @@ namespace TicketBus.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Positions", x => x.IdPos);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Services",
-                columns: table => new
-                {
-                    IdService = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ServiceCode = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    NameService = table.Column<string>(type: "nvarchar(max)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Services", x => x.IdService);
                 });
 
             migrationBuilder.CreateTable(
@@ -299,6 +301,63 @@ namespace TicketBus.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ApplicationUserChatRoom",
+                columns: table => new
+                {
+                    ChatRoomsId = table.Column<int>(type: "int", nullable: false),
+                    ParticipantsId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ApplicationUserChatRoom", x => new { x.ChatRoomsId, x.ParticipantsId });
+                    table.ForeignKey(
+                        name: "FK_ApplicationUserChatRoom_AspNetUsers_ParticipantsId",
+                        column: x => x.ParticipantsId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ApplicationUserChatRoom_ChatRooms_ChatRoomsId",
+                        column: x => x.ChatRoomsId,
+                        principalTable: "ChatRooms",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ChatMessages",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ChatRoomId = table.Column<int>(type: "int", nullable: false),
+                    SenderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ReceiverId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    SentDate = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()"),
+                    IsRead = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ChatMessages", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ChatMessages_AspNetUsers_ReceiverId",
+                        column: x => x.ReceiverId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ChatMessages_AspNetUsers_SenderId",
+                        column: x => x.SenderId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ChatMessages_ChatRooms_ChatRoomId",
+                        column: x => x.ChatRoomId,
+                        principalTable: "ChatRooms",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Districts",
                 columns: table => new
                 {
@@ -385,34 +444,6 @@ namespace TicketBus.Migrations
                         column: x => x.IdTypeNews,
                         principalTable: "TypeNews",
                         principalColumn: "IdTypeNews");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ServiceDetails",
-                columns: table => new
-                {
-                    IdType = table.Column<int>(type: "int", nullable: false),
-                    IdService = table.Column<int>(type: "int", nullable: false),
-                    VehicleTypeIdType = table.Column<int>(type: "int", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ServiceDetails", x => new { x.IdType, x.IdService });
-                    table.ForeignKey(
-                        name: "FK_ServiceDetails_Services_IdService",
-                        column: x => x.IdService,
-                        principalTable: "Services",
-                        principalColumn: "IdService");
-                    table.ForeignKey(
-                        name: "FK_ServiceDetails_VehicleTypes_IdType",
-                        column: x => x.IdType,
-                        principalTable: "VehicleTypes",
-                        principalColumn: "IdType");
-                    table.ForeignKey(
-                        name: "FK_ServiceDetails_VehicleTypes_VehicleTypeIdType",
-                        column: x => x.VehicleTypeIdType,
-                        principalTable: "VehicleTypes",
-                        principalColumn: "IdType");
                 });
 
             migrationBuilder.CreateTable(
@@ -641,10 +672,10 @@ namespace TicketBus.Migrations
                     IdStop = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     StopCode = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    IdRoute = table.Column<int>(type: "int", nullable: true),
+                    IdRoute = table.Column<int>(type: "int", nullable: false),
                     StopName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    IdCity = table.Column<int>(type: "int", nullable: true),
-                    StopOrder = table.Column<int>(type: "int", nullable: true),
+                    IdCity = table.Column<int>(type: "int", nullable: false),
+                    StopOrder = table.Column<int>(type: "int", nullable: false),
                     Time = table.Column<TimeSpan>(type: "time", nullable: true)
                 },
                 constraints: table =>
@@ -659,7 +690,8 @@ namespace TicketBus.Migrations
                         name: "FK_RouteStops_Cities_IdCity",
                         column: x => x.IdCity,
                         principalTable: "Cities",
-                        principalColumn: "IdCity");
+                        principalColumn: "IdCity",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -698,8 +730,8 @@ namespace TicketBus.Migrations
                     PriceCode = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     PriceValue = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     IdRoute = table.Column<int>(type: "int", nullable: true),
-                    IdStopStart = table.Column<int>(type: "int", nullable: true),
-                    IdStopEnd = table.Column<int>(type: "int", nullable: true),
+                    IdStopStart = table.Column<int>(type: "int", nullable: false),
+                    IdStopEnd = table.Column<int>(type: "int", nullable: false),
                     IdCoach = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
@@ -1564,6 +1596,11 @@ namespace TicketBus.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_ApplicationUserChatRoom_ParticipantsId",
+                table: "ApplicationUserChatRoom",
+                column: "ParticipantsId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
                 column: "RoleId");
@@ -1631,6 +1668,21 @@ namespace TicketBus.Migrations
                 name: "IX_BusRoutes_IdStartCity",
                 table: "BusRoutes",
                 column: "IdStartCity");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChatMessages_ChatRoomId",
+                table: "ChatMessages",
+                column: "ChatRoomId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChatMessages_ReceiverId",
+                table: "ChatMessages",
+                column: "ReceiverId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChatMessages_SenderId",
+                table: "ChatMessages",
+                column: "SenderId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Coaches_IdBrand",
@@ -1765,16 +1817,6 @@ namespace TicketBus.Migrations
                 column: "IdCoach");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ServiceDetails_IdService",
-                table: "ServiceDetails",
-                column: "IdService");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ServiceDetails_VehicleTypeIdType",
-                table: "ServiceDetails",
-                column: "VehicleTypeIdType");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Tickets_IdEmployee",
                 table: "Tickets",
                 column: "IdEmployee");
@@ -1799,6 +1841,9 @@ namespace TicketBus.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "ApplicationUserChatRoom");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
             migrationBuilder.DropTable(
@@ -1815,6 +1860,9 @@ namespace TicketBus.Migrations
 
             migrationBuilder.DropTable(
                 name: "Bills");
+
+            migrationBuilder.DropTable(
+                name: "ChatMessages");
 
             migrationBuilder.DropTable(
                 name: "Districts");
@@ -1835,19 +1883,16 @@ namespace TicketBus.Migrations
                 name: "Pickups");
 
             migrationBuilder.DropTable(
-                name: "ServiceDetails");
-
-            migrationBuilder.DropTable(
                 name: "Tickets");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
-                name: "TypeNews");
+                name: "ChatRooms");
 
             migrationBuilder.DropTable(
-                name: "Services");
+                name: "TypeNews");
 
             migrationBuilder.DropTable(
                 name: "Employees");

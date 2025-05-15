@@ -9,7 +9,6 @@ namespace TicketBus.Models
         public DateTime? DateOfBirth { get; set; }
 
         //Khung Chat
-        public string Role { get; set; } // Admin, Employee, Passenger
         public bool IsOnline { get; set; }
         public List<ChatRoom> ChatRooms { get; set; }
     }

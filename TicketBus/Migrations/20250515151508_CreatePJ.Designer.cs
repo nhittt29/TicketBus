@@ -12,8 +12,8 @@ using TicketBus.Data;
 namespace TicketBus.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250504034344_FixAScheduleDetails")]
-    partial class FixAScheduleDetails
+    [Migration("20250515151508_CreatePJ")]
+    partial class CreatePJ
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,21 @@ namespace TicketBus.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("ApplicationUserChatRoom", b =>
+                {
+                    b.Property<int>("ChatRoomsId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ParticipantsId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("ChatRoomsId", "ParticipantsId");
+
+                    b.HasIndex("ParticipantsId");
+
+                    b.ToTable("ApplicationUserChatRoom");
+                });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
@@ -187,6 +202,9 @@ namespace TicketBus.Migrations
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsOnline")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
@@ -365,6 +383,72 @@ namespace TicketBus.Migrations
                     b.HasIndex("IdStartCity");
 
                     b.ToTable("BusRoutes");
+                });
+
+            modelBuilder.Entity("TicketBus.Models.ChatMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ChatRoomId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ReceiverId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("SenderId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("SentDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChatRoomId");
+
+                    b.HasIndex("ReceiverId");
+
+                    b.HasIndex("SenderId");
+
+                    b.ToTable("ChatMessages");
+                });
+
+            modelBuilder.Entity("TicketBus.Models.ChatRoom", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RoomName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ChatRooms");
                 });
 
             modelBuilder.Entity("TicketBus.Models.City", b =>
@@ -5852,10 +5936,10 @@ namespace TicketBus.Migrations
                     b.Property<int>("IdSchedule")
                         .HasColumnType("int");
 
-                    b.Property<int?>("IdStopEnd")
+                    b.Property<int>("IdStopEnd")
                         .HasColumnType("int");
 
-                    b.Property<int?>("IdStopStart")
+                    b.Property<int>("IdStopStart")
                         .HasColumnType("int");
 
                     b.Property<string>("PriceCode")
@@ -5922,10 +6006,10 @@ namespace TicketBus.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdStop"));
 
-                    b.Property<int?>("IdCity")
+                    b.Property<int>("IdCity")
                         .HasColumnType("int");
 
-                    b.Property<int?>("IdRoute")
+                    b.Property<int>("IdRoute")
                         .HasColumnType("int");
 
                     b.Property<string>("StopCode")
@@ -5934,7 +6018,7 @@ namespace TicketBus.Migrations
                     b.Property<string>("StopName")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("StopOrder")
+                    b.Property<int>("StopOrder")
                         .HasColumnType("int");
 
                     b.Property<TimeSpan?>("Time")
@@ -6008,47 +6092,6 @@ namespace TicketBus.Migrations
                     b.HasIndex("IdCoach");
 
                     b.ToTable("Seats");
-                });
-
-            modelBuilder.Entity("TicketBus.Models.Service", b =>
-                {
-                    b.Property<int>("IdService")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdService"));
-
-                    b.Property<string>("NameService")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ServiceCode")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("IdService");
-
-                    b.ToTable("Services");
-                });
-
-            modelBuilder.Entity("TicketBus.Models.ServiceDetails", b =>
-                {
-                    b.Property<int>("IdType")
-                        .HasColumnType("int")
-                        .HasColumnOrder(0);
-
-                    b.Property<int>("IdService")
-                        .HasColumnType("int")
-                        .HasColumnOrder(1);
-
-                    b.Property<int?>("VehicleTypeIdType")
-                        .HasColumnType("int");
-
-                    b.HasKey("IdType", "IdService");
-
-                    b.HasIndex("IdService");
-
-                    b.HasIndex("VehicleTypeIdType");
-
-                    b.ToTable("ServiceDetails");
                 });
 
             modelBuilder.Entity("TicketBus.Models.Ticket", b =>
@@ -6379,6 +6422,21 @@ namespace TicketBus.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ApplicationUserChatRoom", b =>
+                {
+                    b.HasOne("TicketBus.Models.ChatRoom", null)
+                        .WithMany()
+                        .HasForeignKey("ChatRoomsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TicketBus.Models.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ParticipantsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -6480,6 +6538,33 @@ namespace TicketBus.Migrations
                     b.Navigation("RegistForm");
 
                     b.Navigation("StartCity");
+                });
+
+            modelBuilder.Entity("TicketBus.Models.ChatMessage", b =>
+                {
+                    b.HasOne("TicketBus.Models.ChatRoom", "ChatRoom")
+                        .WithMany("Messages")
+                        .HasForeignKey("ChatRoomId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("TicketBus.Models.ApplicationUser", "Receiver")
+                        .WithMany()
+                        .HasForeignKey("ReceiverId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("TicketBus.Models.ApplicationUser", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("ChatRoom");
+
+                    b.Navigation("Receiver");
+
+                    b.Navigation("Sender");
                 });
 
             modelBuilder.Entity("TicketBus.Models.Coach", b =>
@@ -6628,12 +6713,14 @@ namespace TicketBus.Migrations
                     b.HasOne("TicketBus.Models.RouteStop", "RouteStopEnd")
                         .WithMany()
                         .HasForeignKey("IdStopEnd")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.HasOne("TicketBus.Models.RouteStop", "RouteStopStart")
                         .WithMany()
                         .HasForeignKey("IdStopStart")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.Navigation("BusRoute");
 
@@ -6660,12 +6747,15 @@ namespace TicketBus.Migrations
                 {
                     b.HasOne("TicketBus.Models.City", "City")
                         .WithMany()
-                        .HasForeignKey("IdCity");
+                        .HasForeignKey("IdCity")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("TicketBus.Models.BusRoute", "BusRoute")
                         .WithMany("RouteStops")
                         .HasForeignKey("IdRoute")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.Navigation("BusRoute");
 
@@ -6704,29 +6794,6 @@ namespace TicketBus.Migrations
                         .IsRequired();
 
                     b.Navigation("Coach");
-                });
-
-            modelBuilder.Entity("TicketBus.Models.ServiceDetails", b =>
-                {
-                    b.HasOne("TicketBus.Models.Service", "Service")
-                        .WithMany()
-                        .HasForeignKey("IdService")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("TicketBus.Models.VehicleType", "VehicleType")
-                        .WithMany()
-                        .HasForeignKey("IdType")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("TicketBus.Models.VehicleType", null)
-                        .WithMany("ServiceDetailsList")
-                        .HasForeignKey("VehicleTypeIdType");
-
-                    b.Navigation("Service");
-
-                    b.Navigation("VehicleType");
                 });
 
             modelBuilder.Entity("TicketBus.Models.Ticket", b =>
@@ -6781,6 +6848,11 @@ namespace TicketBus.Migrations
                     b.Navigation("RouteStops");
                 });
 
+            modelBuilder.Entity("TicketBus.Models.ChatRoom", b =>
+                {
+                    b.Navigation("Messages");
+                });
+
             modelBuilder.Entity("TicketBus.Models.City", b =>
                 {
                     b.Navigation("Districts");
@@ -6803,8 +6875,6 @@ namespace TicketBus.Migrations
             modelBuilder.Entity("TicketBus.Models.VehicleType", b =>
                 {
                     b.Navigation("Coaches");
-
-                    b.Navigation("ServiceDetailsList");
                 });
 #pragma warning restore 612, 618
         }
