@@ -1,0 +1,162 @@
+﻿@model List<TicketBus.Models.BusRoute>
+
+@{
+    ViewData["Title"] = "Danh sách tuyến xe đã phê duyệt";
+    Layout = "~/Areas/Brand/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/IndexBusRoute.css" asp-append-version="true" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+
+@if (!string.IsNullOrEmpty(ViewBag.Message))
+{
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        @ViewBag.Message
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Header với icon quay về -->
+<div class="header-section">
+    <a asp-area="Brand" asp-controller="Home" asp-action="Index" class="back-link">
+        <i class="fas fa-arrow-left"></i>
+        Quay về trang quản lý
+    </a>
+</div>
+
+<!-- Bộ lọc -->
+<div class="filter-section mb-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="row">
+                <div class="col-md-6">
+                    <label for="pickupFilter" class="form-label"><i class="fas fa-bus-alt me-2"></i>Lọc theo điểm đón</label>
+                    <select id="pickupFilter" class="form-select">
+                        <option value="">Tất cả điểm đón</option>
+                        @if (Model != null && Model.Any())
+                        {
+                            var uniquePickups = Model
+                            .SelectMany(r => r.Pickups ?? new List<TicketBus.Models.Pickup>())
+                            .Select(p => p.PickupName)
+                            .Distinct()
+                            .OrderBy(p => p);
+                            foreach (var pickup in uniquePickups)
+                            {
+                                <option value="@pickup">@pickup</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="dropoffFilter" class="form-label"><i class="fas fa-map-marker-alt me-2"></i>Lọc theo điểm trả</label>
+                    <select id="dropoffFilter" class="form-select">
+                        <option value="">Tất cả điểm trả</option>
+                        @if (Model != null && Model.Any())
+                        {
+                            var uniqueDropoffs = Model
+                            .SelectMany(r => r.DropOffs ?? new List<TicketBus.Models.DropOff>())
+                            .Select(d => d.DropOffName)
+                            .Distinct()
+                            .OrderBy(d => d);
+                            foreach (var dropoff in uniqueDropoffs)
+                            {
+                                <option value="@dropoff">@dropoff</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="alert alert-warning">Không có tuyến xe nào được phê duyệt.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered table-hover" id="busRouteTable">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Mã tuyến</th>
+                    <th>Tên tuyến</th>
+                    <th>Thành phố xuất phát</th>
+                    <th>Thành phố kết thúc</th>
+                    <th>Khoảng cách (km)</th>
+                    <th>Thời gian hành trình</th>
+                    <th>Điểm đón</th>
+                    <th>Điểm trả</th>
+                    <th>Ngày bắt đầu</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var route in Model)
+                {
+                    <tr data-pickups="@(route.Pickups != null ? string.Join(",", route.Pickups.Select(p => p.PickupName)) : "")"
+                        data-dropoffs="@(route.DropOffs != null ? string.Join(",", route.DropOffs.Select(d => d.DropOffName)) : "")">
+                        <td>@route.RouteCode</td>
+                        <td>@route.NameRoute</td>
+                        <td>@(route.StartCity?.NameCity ?? "Chưa xác định")</td>
+                        <td>@(route.EndCity?.NameCity ?? "Chưa xác định")</td>
+                        <td>@route.Distance</td>
+                        <td>@(route.TravelTime.HasValue ? route.TravelTime.Value.ToString(@"hh\:mm") : "Chưa xác định")</td>
+                        <td>@(route.Pickups != null ? route.Pickups.Count : 0)</td>
+                        <td>@(route.DropOffs != null ? route.DropOffs.Count : 0)</td>
+                        <td>@(route.StartDate.HasValue ? route.StartDate.Value.ToString("dd/MM/yyyy") : "Chưa xác định")</td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@route.IdRoute" class="btn btn-info btn-sm">Chi tiết</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<div class="mt-4 text-center">
+    <a asp-action="Create" class="btn btn-primary btn-lg">Đăng ký tuyến mới</a>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            function applyFilters() {
+                const selectedPickup = $('#pickupFilter').val();
+                const selectedDropoff = $('#dropoffFilter').val();
+
+                $('#busRouteTable tbody tr').each(function () {
+                    const pickups = $(this).data('pickups') ? $(this).data('pickups').split(',') : [];
+                    const dropoffs = $(this).data('dropoffs') ? $(this).data('dropoffs').split(',') : [];
+
+                    const matchesPickup = !selectedPickup || pickups.includes(selectedPickup);
+                    const matchesDropoff = !selectedDropoff || dropoffs.includes(selectedDropoff);
+
+                    if (matchesPickup && matchesDropoff) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
+
+                // Hiển thị thông báo nếu không có tuyến nào khớp với bộ lọc
+                const visibleRows = $('#busRouteTable tbody tr:visible').length;
+                if (visibleRows === 0) {
+                    $('#busRouteTable').after('<div class="alert alert-warning mt-3 filter-no-results">Không có tuyến xe nào khớp với bộ lọc.</div>');
+                } else {
+                    $('.filter-no-results').remove();
+                }
+            }
+
+            $('#pickupFilter, #dropoffFilter').change(function () {
+                applyFilters();
+            });
+
+            // Áp dụng bộ lọc ban đầu (nếu có giá trị mặc định)
+            applyFilters();
+        });
+    </script>
+}

@@ -1,0 +1,67 @@
+﻿@model TicketBus.Models.Price
+
+@{
+    ViewData["Title"] = "Thêm giá vé";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Thêm giá vé</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" asp-area="Admin">Dashboard</a></li>
+        <li class="breadcrumb-item"><a asp-controller="SchedulePrice" asp-action="Index" asp-area="Admin">Quản lý giá vé</a></li>
+        <li class="breadcrumb-item active">Thêm giá vé</li>
+    </ol>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-plus me-1"></i>
+            Thêm giá vé
+        </div>
+        <div class="card-body">
+            <form asp-action="AddPrice" method="post">
+                <input type="hidden" asp-for="IdSchedule" />
+                <div asp-validation-summary="All" class="text-danger"></div>
+
+                <div class="mb-3">
+                    <label asp-for="IdStopStart" class="form-label">Điểm dừng bắt đầu</label>
+                    <select asp-for="IdStopStart" class="form-select" asp-items="ViewBag.RouteStops"></select>
+                    <span asp-validation-for="IdStopStart" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="IdStopEnd" class="form-label">Điểm dừng kết thúc</label>
+                    <select asp-for="IdStopEnd" class="form-select" asp-items="ViewBag.RouteStops"></select>
+                    <span asp-validation-for="IdStopEnd" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="PriceValue" class="form-label">Giá vé (VNĐ)</label>
+                    <input asp-for="PriceValue" class="form-control" type="number" min="0" />
+                    <span asp-validation-for="PriceValue" class="text-danger"></span>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Lưu
+                    </button>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Quay lại
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

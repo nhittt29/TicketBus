@@ -1,0 +1,107 @@
+﻿@model TicketBus.Models.ViewModels.ScheduleDetailsViewModel
+
+@{
+    ViewData["Title"] = "Tạo lịch trình mới";
+    Layout = "~/Areas/Brand/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/CreateSchedule.css" asp-append-version="true" />
+
+<!-- Header với icon quay về -->
+<div class="header-section">
+    <a asp-area="Brand" asp-controller="Home" asp-action="Index" class="back-link">
+        <i class="fas fa-arrow-left"></i>
+        Quay về trang quản lý
+    </a>
+</div>
+
+<div class="container">
+    <div class="alert alert-info">
+        <h5>Hướng dẫn nhập liệu:</h5>
+        <ul>
+            <li><strong>Tuyến xe</strong>: Chọn một tuyến xe từ danh sách.</li>
+            <li><strong>Xe</strong>: Chọn một xe từ danh sách.</li>
+            <li><strong>Giờ khởi hành</strong>: Chọn giờ và phút khởi hành (định dạng 24h).</li>
+            <li><strong>Giờ đến</strong>: Chọn giờ và phút đến (định dạng 24h). Giờ đến phải lớn hơn giờ khởi hành.</li>
+        </ul>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <form asp-action="Create" method="post">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="form-group mb-3">
+            <label asp-for="IdRoute" class="control-label">Tuyến xe</label>
+            <select asp-for="IdRoute" name="IdRoute" asp-items="@Model.Routes" class="form-control" required>
+                <option value="">Chọn tuyến xe</option>
+            </select>
+            <span asp-validation-for="IdRoute" class="text-danger"></span>
+        </div>
+
+        <div class="form-group mb-3">
+            <label asp-for="IdCoach" class="control-label">Xe</label>
+            <select asp-for="IdCoach" name="IdCoach" asp-items="@Model.Coaches" class="form-control" required>
+                <option value="">Chọn xe</option>
+            </select>
+            <span asp-validation-for="IdCoach" class="text-danger"></span>
+        </div>
+
+        <div class="form-group mb-3">
+            <label class="control-label">Giờ khởi hành</label>
+            <div class="d-flex">
+                <select asp-for="DepartHour" name="DepartHour" class="form-control me-2" style="width: 100px;" required>
+                    @for (int i = 0; i < 24; i++)
+                    {
+                        <option value="@i">@i.ToString("D2")</option>
+                    }
+                </select>
+                <span class="align-self-center me-2">:</span>
+                <select asp-for="DepartMinute" name="DepartMinute" class="form-control" style="width: 100px;" required>
+                    @for (int i = 0; i < 60; i += 5)
+                    {
+                        <option value="@i">@i.ToString("D2")</option>
+                    }
+                </select>
+            </div>
+            <span asp-validation-for="DepartHour" class="text-danger"></span>
+            <span asp-validation-for="DepartMinute" class="text-danger"></span>
+        </div>
+
+        <div class="form-group mb-3">
+            <label class="control-label">Giờ đến</label>
+            <div class="d-flex">
+                <select asp-for="ArriveHour" name="ArriveHour" class="form-control me-2" style="width: 100px;" required>
+                    @for (int i = 0; i < 24; i++)
+                    {
+                        <option value="@i">@i.ToString("D2")</option>
+                    }
+                </select>
+                <span class="align-self-center me-2">:</span>
+                <select asp-for="ArriveMinute" name="ArriveMinute" class="form-control" style="width: 100px;" required>
+                    @for (int i = 0; i < 60; i += 5)
+                    {
+                        <option value="@i">@i.ToString("D2")</option>
+                    }
+                </select>
+            </div>
+            <span asp-validation-for="ArriveHour" class="text-danger"></span>
+            <span asp-validation-for="ArriveMinute" class="text-danger"></span>
+        </div>
+
+        <div class="form-group mt-3">
+            <input type="submit" value="Tạo lịch trình" class="btn btn-primary" />
+            <a asp-action="Index" class="btn btn-secondary">Quay lại</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

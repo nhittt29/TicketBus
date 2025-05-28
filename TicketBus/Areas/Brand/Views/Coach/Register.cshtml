@@ -1,0 +1,153 @@
+﻿@using TicketBus.Models.ViewModels
+@model CoachViewModel
+
+@{
+    ViewData["Title"] = "Đăng kí xe";
+    Layout = "~/Areas/Brand/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/IndexBusRoute.css" asp-append-version="true" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+
+<!-- Header với icon quay về -->
+<div class="header-section">
+    <a asp-area="Brand" asp-controller="Home" asp-action="Index" class="back-link">
+        <i class="fas fa-arrow-left"></i>
+        Quay về trang quản lý
+    </a>
+</div>
+
+<div class="container mt-4">
+    <h3>Đăng ký xe</h3>
+    <form id="registerForm" method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label for="CoachCode" class="form-label">Mã xe</label>
+            <input type="text" class="form-control" id="CoachCode" name="CoachCode" placeholder="Nhập mã xe trên chứng nhận đăng kí xe (ví dụ: 010515)" required />
+        </div>
+
+        <div class="mb-3">
+            <label for="NumberPlate" class="form-label">Biển số xe</label>
+            <input type="text" class="form-control" id="NumberPlate" name="NumberPlate" placeholder="Nhập biển số xe (ví dụ: 51D-123.45)" required />
+        </div>
+
+        <div class="mb-3">
+            <label for="IdType" class="form-label">Loại xe</label>
+            <select class="form-select" id="IdType" name="IdType" required>
+                <option value="" disabled selected>Chọn loại xe</option>
+                @foreach (var vehicleType in ViewBag.VehicleTypes)
+                {
+                    <option value="@vehicleType.IdType">@vehicleType.NameType</option>
+                }
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Ảnh xe</label>
+            <div id="imageInputs">
+                <div class="input-group mb-2">
+                    <input type="file" class="form-control" name="ImageList" accept="image/*" />
+                    <button type="button" class="btn btn-danger remove-image">Xóa</button>
+                </div>
+            </div>
+            <button type="button" id="addImage" class="btn btn-secondary">Thêm ảnh</button>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Tài liệu</label>
+            <div id="documentInputs">
+                <div class="input-group mb-2">
+                    <input type="file" class="form-control" name="DocumentList" accept=".pdf,.doc,.docx" />
+                    <button type="button" class="btn btn-danger remove-document">Xóa</button>
+                </div>
+            </div>
+            <button type="button" id="addDocument" class="btn btn-secondary">Thêm tài liệu</button>
+        </div>
+
+        <div class="mb-3">
+            <button type="submit" class="btn btn-primary">Đăng ký</button>
+        </div>
+    </form>
+
+    <div id="resultMessage" class="mt-3"></div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            let imageIndex = 1;
+            let documentIndex = 1;
+
+            $("#addImage").click(function () {
+                $("#imageInputs").append(`
+                    <div class="input-group mb-2">
+                        <input type="file" class="form-control" name="ImageList" accept="image/*" />
+                        <button type="button" class="btn btn-danger remove-image">Xóa</button>
+                    </div>
+                `);
+                imageIndex++;
+            });
+
+            $("#addDocument").click(function () {
+                $("#documentInputs").append(`
+                    <div class="input-group mb-2">
+                        <input type="file" class="form-control" name="DocumentList" accept=".pdf,.doc,.docx" />
+                        <button type="button" class="btn btn-danger remove-document">Xóa</button>
+                    </div>
+                `);
+                documentIndex++;
+            });
+
+            $(document).on("click", ".remove-image", function () {
+                $(this).closest(".input-group").remove();
+            });
+
+            $(document).on("click", ".remove-document", function () {
+                $(this).closest(".input-group").remove();
+            });
+
+            $("#registerForm").on("submit", function (e) {
+                e.preventDefault();
+
+                var formData = new FormData(this);
+                console.log("Form data before submit:", formData);
+
+                $.ajax({
+                    url: '/Brand/Coach/Register',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (response) {
+                        console.log("Response:", response);
+                        if (response.success) {
+                            $("#resultMessage").html('<div class="alert alert-success">' + response.message + '</div>');
+                            $("#registerForm")[0].reset();
+                            $("#imageInputs").html(`
+                                <div class="input-group mb-2">
+                                    <input type="file" class="form-control" name="ImageList" accept="image/*" />
+                                    <button type="button" class="btn btn-danger remove-image">Xóa</button>
+                                </div>
+                            `);
+                            $("#documentInputs").html(`
+                                <div class="input-group mb-2">
+                                    <input type="file" class="form-control" name="DocumentList" accept=".pdf,.doc,.docx" />
+                                    <button type="button" class="btn btn-danger remove-document">Xóa</button>
+                                </div>
+                            `);
+                        } else {
+                            $("#resultMessage").html('<div class="alert alert-danger">' + response.message + '</div>');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error:", xhr.responseText);
+                        $("#resultMessage").html('<div class="alert alert-danger">Lỗi: ' + xhr.responseText + '</div>');
+                    }
+                });
+            });
+        });
+    </script>
+}

@@ -1,0 +1,13 @@
+﻿
+
+
+<form method="POST" asp-action="CreatePaymentUrl" asp-controller="Payment">
+	<input type="hidden" name="FullName" value="@User.Identity.Name" />
+	<input type="hidden" name="Amount" value="@Model.GrandTotal" />
+
+	<input type="hidden" name="OrderInfo" value="Thanh toán đặt hàng qua Momo" />
+
+
+	<br />
+	<button class="btn btn-danger" name="PayUrl" type="submit">Pay with MoMo</button>
+</form>

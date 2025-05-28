@@ -1,0 +1,225 @@
+﻿<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet" />
+
+<div class="container mt-4">
+    <div class="card payment-card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-ticket-detailed-fill"></i> Xác nhận đặt vé</h5>
+        </div>
+        <div class="card-body">
+            @if (ViewBag.Bill != null)
+            {
+                <div class="ticket-details card mb-3">
+                    <div class="card-body">
+                        <h5><i class="bi bi-receipt"></i> Thông tin hóa đơn</h5>
+                        <p><strong>Mã hóa đơn:</strong> @ViewBag.Bill.BillCode</p>
+                        <p><strong>Số lượng ghế:</strong> @ViewBag.Bill.SeatQuantity</p>
+                        <p><strong>Tổng tiền:</strong> @ViewBag.Bill.Total.ToString("N0") VND</p>
+                        <p>
+                            <strong>Trạng thái thanh toán:</strong>
+                            <span class="badge @(ViewBag.Bill.PaymentStatus == "Pending" ? "bg-warning" : "bg-success")">
+                                @ViewBag.Bill.PaymentStatus
+                            </span>
+                        </p>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-warning">Không tìm thấy thông tin hóa đơn. Vui lòng liên hệ quản trị viên.</div>
+            }
+
+            <div class="ticket-details card mb-3">
+                <div class="card-body">
+                    <h5><i class="bi bi-bus-front-fill"></i> Thông tin chuyến đi</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Tuyến xe:</strong> @Model.ScheduleDetails?.BusRoute?.NameRoute</p>
+                            <p><strong>Hãng xe:</strong> @Model.ScheduleDetails?.Coach?.Brand?.NameBrand</p>
+                            <p><strong>Loại xe:</strong> @Model.ScheduleDetails?.Coach?.VehicleType?.NameType</p>
+                            <p><strong>Biển số:</strong> @Model.ScheduleDetails?.Coach?.NumberPlate</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Điểm đi:</strong> @Model.RouteStopStart?.StopName <small>(@Model.RouteStopStart?.Time?.ToString(@"hh\:mm"))</small></p>
+                            <p>
+                                <strong>Điểm đón:</strong>
+                                @if (ViewBag.Pickup != null)
+                                {
+                                    @ViewBag.Pickup.PickupName
+                                    @if (ViewBag.Pickup.City != null)
+                                    {
+                                        <text> (@ViewBag.Pickup.City.NameCity)</text>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-danger">Không xác định</span>
+                                }
+                            </p>
+                            <p><strong>Điểm đến:</strong> @Model.RouteStopEnd?.StopName <small>(@Model.RouteStopEnd?.Time?.ToString(@"hh\:mm"))</small></p>
+                            <p>
+                                <strong>Điểm trả:</strong>
+                                @if (ViewBag.DropOff != null)
+                                {
+                                    @ViewBag.DropOff.DropOffName
+                                    @if (ViewBag.DropOff.City != null)
+                                    {
+                                        <text> (@ViewBag.DropOff.City.NameCity)</text>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-danger">Không xác định</span>
+                                }
+                            </p>
+                            <p>
+                                <strong>Ngày khởi hành:</strong>
+                                @if (ViewBag.Tickets != null && ViewBag.Tickets.Count > 0 && ViewBag.Tickets[0].DepartureDate != null)
+                                {
+                                    @(((DateTime)ViewBag.Tickets[0].DepartureDate).ToString("dd/MM/yyyy"))
+                                }
+                                else if (ViewBag.DepartureDate != null)
+                                {
+                                    @(((DateTime)ViewBag.DepartureDate).ToString("dd/MM/yyyy"))
+                                }
+                                else
+                                {
+                                    <span class="text-danger">Không xác định. Vui lòng liên hệ quản trị viên.</span>
+                                }
+                            </p>
+                        </div>
+                    </div>
+                    <hr />
+                    <h5><i class="bi bi-chair"></i> Thông tin vé</h5>
+                    @if (ViewBag.Tickets != null && ViewBag.Tickets.Count > 0)
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Mã vé</th>
+                                        <th>Ghế</th>
+                                        <th>Mã hóa đơn</th>
+                                        <th>Ngày tạo</th>
+                                        <th>Ngày khởi hành</th>
+                                        <th>Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var ticket in ViewBag.Tickets)
+                                    {
+                                        <tr>
+                                            <td>@(ticket.TicketCode ?? "Chưa tạo")</td>
+                                            <td>@(ticket.Seat?.SeatCode ?? "-")</td>
+                                            <td>@(ticket.IdBill != null ? ticket.IdBill.ToString() : "Chưa liên kết")</td>
+                                            <td>@(ticket.CreatedDate != null ? ((DateTime)ticket.CreatedDate).ToString("dd/MM/yyyy HH:mm") : "-")</td>
+                                            <td>@(ticket.DepartureDate != null ? ((DateTime)ticket.DepartureDate).ToString("dd/MM/yyyy") : "-")</td>
+                                            <td>
+                                                <span class="badge @(ticket.State == TicketState.ChuaThanhToan ? "bg-warning" : "bg-success")">
+                                                    @(ticket.State == TicketState.ChuaThanhToan ? "Chưa thanh toán" : "Đã thanh toán")
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning">Không tìm thấy thông tin vé. Vui lòng thử lại hoặc liên hệ quản trị viên.</div>
+                    }
+                    <hr />
+                    <h5><i class="bi bi-person-fill"></i> Thông tin khách hàng</h5>
+                    <p><strong>Họ tên:</strong> @ViewBag.CustomerName</p>
+                    <p><strong>Số điện thoại:</strong> @ViewBag.CustomerPhone</p>
+                </div>
+            </div>
+
+            @if (ViewBag.Bill != null && ViewBag.Bill.PaymentStatus == "Pending")
+            {
+                <div class="payment-method card mb-3">
+                    <div class="card-body">
+                        <h5><i class="bi bi-wallet2"></i> Phương thức thanh toán</h5>
+                        <div class="payment-option">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="paymentMethod" id="payAtBus" value="payAtBus" checked>
+                                <label class="form-check-label" for="payAtBus">
+                                    Thanh toán tại nhà xe
+                                </label>
+                            </div>
+                            <div id="payAtBusDetails" class="mt-2">
+                                <p>Vui lòng đến văn phòng nhà xe hoặc điểm đón để thanh toán trực tiếp trước giờ khởi hành. Thông tin liên hệ nhà xe sẽ được cung cấp qua email hoặc số điện thoại của bạn.</p>
+                            </div>
+                        </div>
+                        <div class="payment-option">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="paymentMethod" id="payWithMomo" value="payWithMomo">
+                                <label class="form-check-label" for="payWithMomo">
+                                    Thanh toán bằng MoMo
+                                </label>
+                            </div>
+                            <div id="momoDetails" class="momo-qr">
+                                <p>Nhấn nút bên dưới để thanh toán qua MoMo:</p>
+                                <form method="post" asp-controller="Payment" asp-action="CreatePaymentUrl">
+                                    <input type="hidden" name="SelectedSeats" value="@string.Join(",", ViewBag.SelectedSeats)" />
+                                    <input type="hidden" name="PriceValue" value="@Model.PriceValue" />
+                                    <input type="hidden" name="Total" value="@(Model.PriceValue * (ViewBag.SelectedSeats?.Count ?? 1))" />
+                                    <input type="hidden" name="PaymentStatus" value="Pending" />
+                                    <input type="hidden" name="BillId" value="@(ViewBag.Bill?.IdBill ?? 0)" />
+                                    <button type="submit" class="btn btn-momo">Thanh toán qua MoMo</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="payment-info card">
+                    <div class="card-body">
+                        <p><i class="bi bi-check-circle-fill text-success"></i> Vui lòng kiểm tra thông tin và hoàn tất thanh toán theo phương thức đã chọn.</p>
+                    </div>
+                </div>
+            }
+
+            <div class="text-end">
+                <a href="@Url.Action("Index", "Trip")" class="btn btn-outline-primary btn-back">
+                    <i class="bi bi-arrow-left-circle"></i> Quay lại danh sách chuyến
+                </a>
+                <a href="@Url.Action("MyTickets", "Trip")" class="btn btn-primary btn-continue">
+                    <i class="bi bi-arrow-right-circle-fill"></i> Xem vé của tôi
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('payAtBus').addEventListener('change', function () {
+        document.getElementById('payAtBusDetails').style.display = 'block';
+        document.getElementById('momoDetails').style.display = 'none';
+    });
+
+    document.getElementById('payWithMomo').addEventListener('change', function () {
+        document.getElementById('payAtBusDetails').style.display = 'none';
+        document.getElementById('momoDetails').style.display = 'block';
+    });
+
+    document.querySelector('form[asp-action="CreatePaymentUrl"]').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const form = e.target;
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: { 'Accept': 'application/json' }
+            });
+            const result = await response.json();
+            if (result.payUrl) {
+                window.location.href = result.payUrl;
+            } else {
+                alert('Failed to retrieve MoMo payment URL: ' + (result.message || 'Unknown error'));
+            }
+        } catch (error) {
+            alert('Error during payment processing: ' + error.message);
+        }
+    });
+</script>

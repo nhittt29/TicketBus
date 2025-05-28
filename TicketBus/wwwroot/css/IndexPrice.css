@@ -1,0 +1,110 @@
+﻿/* Header quay về trang quản lý */
+.header-section {
+    background-color: #007bff;
+    padding: 10px 20px;
+    border-bottom: 1px solid #0056b3;
+}
+
+.back-link {
+    color: #fff;
+    text-decoration: none;
+    font-size: 18px;
+    margin-right: 10px;
+    transition: color 0.3s ease;
+}
+
+    .back-link:hover {
+        color: #ddd;
+    }
+
+/* Container */
+.container {
+    padding: 20px;
+}
+
+/* Alert */
+.alert-warning {
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 20px;
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}
+
+/* Bảng */
+.table-responsive {
+    overflow-x: auto;
+}
+
+.table {
+    margin-bottom: 0;
+    font-size: 0.95rem;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.table-bordered {
+    border: 2px solid #dee2e6;
+}
+
+    .table-bordered th,
+    .table-bordered td {
+        border: 1px solid #dee2e6;
+        padding: 12px;
+        vertical-align: middle;
+        text-align: left;
+    }
+
+.table thead.thead-dark th {
+    background-color: #343a40;
+    color: #fff;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table tbody tr:nth-of-type(odd) {
+    background-color: #f8f9fa;
+}
+
+.table-striped tbody tr:hover {
+    background-color: #e9ecef;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+
+    .table th,
+    .table td {
+        font-size: 0.85rem;
+        padding: 8px;
+    }
+
+    .back-link {
+        font-size: 1rem;
+    }
+
+        .back-link i {
+            font-size: 1rem;
+        }
+}
+
+@media (max-width: 576px) {
+    .table th,
+    .table td {
+        font-size: 0.8rem;
+        padding: 6px;
+    }
+
+    .back-link {
+        font-size: 0.9rem;
+    }
+
+        .back-link i {
+            font-size: 0.9rem;
+        }
+}

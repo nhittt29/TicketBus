@@ -1,0 +1,141 @@
+﻿/* Định dạng chung cho container */
+.container-fluid {
+    padding: 1.5rem;
+}
+
+/* Định dạng tiêu đề Dashboard */
+.mt-4 {
+    margin-top: 1.5rem;
+    font-size: 2rem;
+    font-weight: 500;
+    color: #333;
+}
+
+/* Định dạng breadcrumb */
+.breadcrumb {
+    background-color: #f8f9fa;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.breadcrumb-item.active {
+    color: #6c757d;
+}
+
+/* Định dạng các thẻ (Cards) */
+.card {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1.5rem;
+}
+
+.card-body {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.card-footer {
+    background-color: transparent;
+    border-top: none;
+    padding: 0.75rem 1.25rem;
+}
+
+    .card-footer a {
+        text-decoration: none;
+    }
+
+        .card-footer a:hover {
+            text-decoration: underline;
+        }
+
+/* Màu sắc cho các thẻ */
+.bg-primary {
+    background-color: #007bff !important;
+}
+
+.bg-warning {
+    background-color: #ffc107 !important;
+}
+
+.bg-success {
+    background-color: #28a745 !important;
+}
+
+.bg-danger {
+    background-color: #dc3545 !important;
+}
+
+.text-white {
+    color: #fff !important;
+}
+
+/* Định dạng biểu đồ */
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e3e6f0;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+}
+
+    .card-header i {
+        margin-right: 0.5rem;
+    }
+
+/* Bổ sung để đảm bảo hiển thị tốt cho các biểu đồ Chart.js */
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 300px; /* Đặt chiều cao cố định cho tất cả các biểu đồ */
+}
+
+.card-body canvas {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Định dạng bảng thông báo */
+.table {
+    width: 100%;
+    margin-bottom: 1rem;
+    color: #212529;
+    border-collapse: collapse;
+}
+
+    .table th,
+    .table td {
+        padding: 0.75rem;
+        vertical-align: middle;
+        border: 1px solid #dee2e6;
+    }
+
+    .table thead th {
+        background-color: #f8f9fa;
+        font-weight: 500;
+    }
+
+.badge {
+    padding: 0.5em 0.75em;
+    font-size: 0.85em;
+    border-radius: 0.25rem;
+}
+
+    .badge.bg-success {
+        background-color: #28a745 !important;
+    }
+
+    .badge.bg-warning {
+        background-color: #ffc107 !important;
+        color: #212529 !important;
+    }
+
+.alert-info {
+    background-color: #e7f1ff;
+    color: #1c2526;
+    padding: 1rem;
+    border-radius: 0.25rem;
+    text-align: center;
+}

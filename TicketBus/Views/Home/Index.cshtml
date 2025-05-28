@@ -1,0 +1,47 @@
+﻿@* Views/Home/Index.cshtml *@
+@{
+    ViewData["Title"] = "Trang chủ";
+}
+
+<!-- Banner -->
+<section class="banner">
+    <div class="banner-content">
+        <h1>Đặt Vé Xe Buýt Nhanh Chóng & Tiện Lợi</h1>
+        <p>Trải nghiệm dịch vụ đặt vé xe buýt dễ dàng, tiết kiệm thời gian!</p>
+        <a href="#datve" class="btn-booking">Đặt vé ngay</a>
+    </div>
+</section>
+
+<!-- Dịch vụ nổi bật -->
+<section class="services">
+    <div class="container text-center">
+        <h2 class="section-title">Dịch Vụ Tiện Ích</h2>
+        <div class="service-list">
+            <div class="service-item">📶 WiFi miễn phí</div>
+            <div class="service-item">❄️ Điều hòa</div>
+            <div class="service-item">🛑 Đưa đón tận nơi</div>
+            <div class="service-item">💺 Ghế ngả thoải mái</div>
+        </div>
+    </div>
+</section>
+
+<!-- Điều hướng theo vai trò -->
+<section class="navigation mt-4">
+    <div class="container text-center">
+        @if (User.Identity.IsAuthenticated)
+        {
+            if (User.IsInRole("Admin"))
+            {
+                <p><a asp-area="Admin" asp-controller="Home" asp-action="AdminPanel" class="btn btn-primary">Admin Panel</a></p>
+            }
+            else if (User.IsInRole("Brand"))
+            {
+                <p><a asp-area="Brand" asp-controller="Home" asp-action="Index" class="btn btn-primary">Brand Management</a></p>
+            }
+            else if (User.IsInRole("NhanVien"))
+            {
+                <p><a asp-area="Admin" asp-controller="Home" asp-action="EmployeePanel" class="btn btn-primary">Employee Panel</a></p>
+            }
+        }
+    </div>
+</section>

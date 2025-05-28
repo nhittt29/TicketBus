@@ -1,0 +1,205 @@
+﻿@model dynamic
+@using TicketBus.Models
+
+@{
+    ViewData["Title"] = "Bus Company Management";
+    ViewData["HeaderTitle"] = "<i class='fas fa-bus-alt me-2 text-primary'></i>Bus Company Management";
+    Layout = "~/Areas/Brand/Views/Shared/_Layout.cshtml";
+    var brandInfo = ViewBag.BrandInfo as Brand;
+}
+
+<!-- Phần thông báo từ TempData -->
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Message"]
+        <button type="button" class="btn btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Nội dung chính -->
+<div class="brand-main">
+    <!-- Sidebar (Profile) -->
+    <div class="brand-sidebar">
+        <h3>Thông tin hãng xe</h3>
+        <div class="profile-info">
+            @if (brandInfo != null)
+            {
+                <!-- Hiển thị hình ảnh -->
+                <div class="brand-image mb-3 text-center">
+                    <img src="@(string.IsNullOrEmpty(brandInfo.Image) ? "/images/default-brand.png" : brandInfo.Image)"
+                         alt="@brandInfo.NameBrand"
+                         class="img-fluid rounded-circle"
+                         style="width: 120px; height: 120px; object-fit: cover;" />
+                </div>
+
+                <p><strong>Tên hãng:</strong> @brandInfo.NameBrand</p>
+                @if (!string.IsNullOrEmpty(brandInfo.BrandCode))
+                {
+                    <p><strong>Mã đăng kí:</strong> @brandInfo.BrandCode</p>
+                }
+                <p><strong>Số điện thoại:</strong> @brandInfo.PhoneNumber</p>
+                <p><strong>Địa chỉ:</strong> @brandInfo.Address</p>
+                <p><strong>Trạng thái:</strong> @(brandInfo.State == BrandState.HoatDong ? "Hoạt động" : "Không hoạt động")</p>
+            }
+            else
+            {
+                <p class="text-danger">Hãng xe đang chờ phê duyệt. Vui lòng chờ quản trị viên xác nhận tài khoản trước khi sử dụng các chức năng</p>
+            }
+        </div>
+    </div>
+
+    <!-- Nội dung chính -->
+    <div class="brand-content">
+        <!-- Quản lý vé -->
+        <div class="management-section">
+            <h3>Quản lý vé</h3>
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Quản lý vé</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Xem danh sách vé xe đã được đặt bởi hành khách.</p>
+                    <a asp-area="Brand" asp-controller="Home" asp-action="TicketList" class="btn btn-primary">
+                        <i class="fas fa-ticket-alt me-1"></i> Xem danh sách vé xe
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quản lý xe -->
+        <div class="management-section">
+            <h3>Quản lý xe</h3>
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Quản lý xe</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Quản lý các xe của hãng hoặc xem danh sách xe đã đăng ký.</p>
+                    <button class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#coachListModal">Xem danh sách xe</button>
+                    <a asp-area="Brand" asp-controller="Coach" asp-action="Register" class="btn btn-primary">
+                        <i class="fas fa-bus-alt me-1"></i> Đăng ký xe mới
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quản lý tuyến -->
+        <div class="management-section">
+            <h3>Quản lý tuyến</h3>
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Quản lý tuyến</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Đăng ký và quản lý các tuyến đường cho xe của hãng.</p>
+                    <a asp-area="Brand" asp-controller="BusRoute" asp-action="Index" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-list me-1"></i> Xem danh sách tuyến
+                    </a>
+                    <a asp-area="Brand" asp-controller="BusRoute" asp-action="Create" class="btn btn-primary">
+                        <i class="fas fa-plus-circle me-1"></i> Đăng ký tuyến mới
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quản lý lịch trình -->
+        <div class="management-section">
+            <h3>Quản lý lịch trình</h3>
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Quản lý lịch trình</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Tạo và quản lý lịch trình cho các tuyến đường và xe của hãng.</p>
+                    <a asp-area="Brand" asp-controller="Schedule" asp-action="Create" class="btn btn-primary">
+                        <i class="fas fa-calendar-alt me-1"></i> Tạo lịch trình mới
+                    </a>
+                    <a asp-area="Brand" asp-controller="Schedule" asp-action="Index" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-list me-1"></i> Xem danh sách lịch trình
+                    </a>
+                    <a asp-area="Brand" asp-controller="Price" asp-action="Index" class="btn btn-success me-2">
+                        <i class="fas fa-money-bill-wave me-1"></i> Quản lý giá vé
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal hiển thị danh sách xe -->
+<div class="modal fade" id="coachListModal" tabindex="-1" aria-labelledby="coachListModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="card-header">
+                <h5 class="card-title">Danh sách xe đã được phê duyệt</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="coachListContent">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Mã xe</th>
+                                <th>Biển số</th>
+                                <th>Loại xe</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody id="coachListTableBody">
+                            <!-- Dữ liệu sẽ được tải qua AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Khi modal được mở, tải danh sách xe
+            $('#coachListModal').on('show.bs.modal', function () {
+                $.ajax({
+                    url: '@Url.Action("GetApprovedCoaches", "Home", new { area = "Brand" })',
+                    type: 'GET',
+                    success: function (data) {
+                        var coachListTableBody = $('#coachListTableBody');
+                        coachListTableBody.empty();
+
+                        if (data.coaches && data.coaches.length > 0) {
+                            data.coaches.forEach(function (coach) {
+                                var row = $('<tr></tr>');
+                                row.append($('<td></td>').text(coach.coachCode));
+                                row.append($('<td></td>').text(coach.numberPlate));
+                                row.append($('<td></td>').text(coach.vehicleType || 'N/A'));
+
+                                var stateText = '';
+                                switch (coach.state) {
+                                    case 0: stateText = 'Hoạt động'; break;
+                                    case 1: stateText = 'Không hoạt động'; break;
+                                    case 2: stateText = 'Chờ phê duyệt'; break;
+                                    case 3: stateText = 'Đã phê duyệt'; break;
+                                    case 4: stateText = 'Từ chối'; break;
+                                    default: stateText = 'Không xác định'; break;
+                                }
+                                row.append($('<td></td>').text(stateText));
+
+                                coachListTableBody.append(row);
+                            });
+                        } else {
+                            coachListTableBody.append('<tr><td colspan="4" class="text-center">Không có xe nào đã được phê duyệt.</td></tr>');
+                        }
+                    },
+                    error: function () {
+                        $('#coachListTableBody').html('<tr><td colspan="4" class="text-center">Lỗi khi tải danh sách xe.</td></tr>');
+                    }
+                });
+            });
+        });
+    </script>
+}

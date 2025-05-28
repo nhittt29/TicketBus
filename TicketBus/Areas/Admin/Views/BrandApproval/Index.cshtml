@@ -1,0 +1,249 @@
+﻿@using TicketBus.Models
+@model List<TicketBus.Models.Brand>
+
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Phê duyệt hãng xe";
+
+    // Tạo danh sách các tùy chọn cho bộ lọc
+    var filterOptions = new List<(string Value, string Text, bool Selected)>
+    {
+        (Url.Action("Index", "BrandApproval", new { area = "Admin", filter = "pending" }), "Chờ phê duyệt", ViewBag.Filter == "pending"),
+        (Url.Action("Index", "BrandApproval", new { area = "Admin", filter = "approved" }), "Đã phê duyệt", ViewBag.Filter == "approved"),
+        (Url.Action("Index", "BrandApproval", new { area = "Admin", filter = "rejected" }), "Đã từ chối", ViewBag.Filter == "rejected")
+    };
+}
+
+<main>
+    <div class="container-fluid px-4">
+        <h1 class="mt-4">Phê duyệt hãng xe</h1>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" asp-area="Admin">Dashboard</a></li>
+            <li class="breadcrumb-item active">Phê duyệt hãng xe</li>
+        </ol>
+
+        <!-- Bộ lọc -->
+        <div class="mb-4">
+            <label for="filterSelect" class="form-label me-2">Lọc theo trạng thái:</label>
+            <select id="filterSelect" class="form-select d-inline-block w-auto" onchange="location = this.value;">
+                @foreach (var option in filterOptions)
+                {
+                    if (option.Selected)
+                    {
+                        <option value="@option.Value" selected>@option.Text</option>
+                    }
+                    else
+                    {
+                        <option value="@option.Value">@option.Text</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-building me-1"></i>
+                Danh sách hãng xe
+            </div>
+            <div class="card-body">
+                @if (Model.Any())
+                {
+                    <table id="datatablesSimple">
+                        <thead>
+                            <tr>
+                                <th>Tên hãng xe</th>
+                                <th>Địa chỉ</th>
+                                <th>Số điện thoại</th>
+                                <th>Ảnh hãng xe</th>
+                                <th>Tài liệu</th>
+                                <th>Trạng thái</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var brand in Model)
+                            {
+                                <tr id="row-@brand.IdBrand">
+                                    <td>@brand.NameBrand</td>
+                                    <td>@brand.Address</td>
+                                    <td>@brand.PhoneNumber</td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(brand.Image))
+                                        {
+                                            <img src="@brand.Image" alt="Ảnh hãng xe" class="img-fluid" style="max-width: 100px; border-radius: 5px;" />
+                                        }
+                                        else
+                                        {
+                                            <span>Không có ảnh</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (brand.RegistForm != null && !string.IsNullOrEmpty(brand.RegistForm.Content) && brand.RegistForm.Content.Contains("Tài liệu:"))
+                                        {
+                                            var documentPath = brand.RegistForm.Content.Split("Tài liệu: ")[1];
+                                            <a href="@documentPath" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-file-alt"></i> Xem tài liệu
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span>Không có tài liệu</span>
+                                        }
+                                    </td>
+                                    <td class="state-@brand.IdBrand">
+                                        @if (brand.State == BrandState.ChoPheDuyet)
+                                        {
+                                            <span class="badge bg-warning text-dark">Chờ phê duyệt</span>
+                                        }
+                                        else if (brand.State == BrandState.HoatDong)
+                                        {
+                                            <span class="badge bg-success">Đã phê duyệt</span>
+                                        }
+                                        else if (brand.State == BrandState.KhongHoatDong)
+                                        {
+                                            <span class="badge bg-danger">Đã từ chối</span>
+                                        }
+                                    </td>
+                                    <td class="action-@brand.IdBrand">
+                                        @if (brand.State == BrandState.ChoPheDuyet)
+                                        {
+                                            <button class="btn btn-success btn-sm me-1 approve-btn" data-id="@brand.IdBrand">
+                                                <i class="fas fa-check"></i> Phê duyệt
+                                            </button>
+                                            <button class="btn btn-danger btn-sm reject-btn" data-id="@brand.IdBrand" data-bs-toggle="modal" data-bs-target="#rejectModal-@brand.IdBrand">
+                                                <i class="fas fa-times"></i> Từ chối
+                                            </button>
+                                        }
+                                        else if (brand.State == BrandState.HoatDong)
+                                        {
+                                            <button class="btn btn-secondary btn-sm me-1" disabled>
+                                                <i class="fas fa-check"></i> Đã phê duyệt
+                                            </button>
+                                        }
+                                        else if (brand.State == BrandState.KhongHoatDong)
+                                        {
+                                            <button class="btn btn-secondary btn-sm" disabled>
+                                                <i class="fas fa-times"></i> Đã từ chối
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+
+                                <!-- Modal nhập lý do từ chối -->
+                                <div class="modal fade" id="rejectModal-@brand.IdBrand" tabindex="-1" aria-labelledby="rejectModalLabel-@brand.IdBrand" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="rejectModalLabel-@brand.IdBrand">Lý do từ chối hãng xe @brand.NameBrand</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <form id="rejectForm-@brand.IdBrand">
+                                                    <div class="mb-3">
+                                                        <label for="rejectionReason-@brand.IdBrand" class="form-label">Lý do từ chối</label>
+                                                        <textarea class="form-control" id="rejectionReason-@brand.IdBrand" rows="3" required></textarea>
+                                                    </div>
+                                                    <button type="submit" class="btn btn-danger">Xác nhận từ chối</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="alert alert-info text-center">
+                        @switch (ViewBag.Filter)
+                        {
+                            case "approved":
+                                @: Không có hãng xe nào đã được phê duyệt.
+                                break;
+                            case "rejected":
+                                @: Không có hãng xe nào bị từ chối.
+                                break;
+                            case "pending":
+                            default:
+                                @: Không có hãng xe nào đang chờ phê duyệt.
+                                break;
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</main>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Xử lý phê duyệt
+            $('.approve-btn').click(function () {
+                var brandId = $(this).data('id');
+                $.ajax({
+                    url: '@Url.Action("ApproveBrand", "BrandApproval", new { area = "Admin" })',
+                    type: 'POST',
+                    data: { id: brandId },
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            // Cập nhật trạng thái
+                            $(`.state-${brandId}`).html('<span class="badge bg-success">Đã phê duyệt</span>');
+                            // Cập nhật nút hành động
+                            $(`.action-${brandId}`).html('<button class="btn btn-secondary btn-sm me-1" disabled><i class="fas fa-check"></i> Đã phê duyệt</button>');
+                            // Hiển thị thông báo
+                            toastr.success(response.message);
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error('Có lỗi xảy ra. Vui lòng thử lại.');
+                    }
+                });
+            });
+
+            // Xử lý từ chối
+            $('form[id^="rejectForm-"]').submit(function (e) {
+                e.preventDefault();
+                var brandId = $(this).attr('id').split('-')[1];
+                var rejectionReason = $(`#rejectionReason-${brandId}`).val();
+
+                if (!rejectionReason) {
+                    toastr.error('Vui lòng nhập lý do từ chối.');
+                    return;
+                }
+
+                $.ajax({
+                    url: '@Url.Action("RejectBrand", "BrandApproval", new { area = "Admin" })',
+                    type: 'POST',
+                    data: { id: brandId, rejectReason: rejectionReason },
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            // Cập nhật trạng thái
+                            $(`.state-${brandId}`).html('<span class="badge bg-danger">Đã từ chối</span>');
+                            // Cập nhật nút hành động
+                            $(`.action-${brandId}`).html('<button class="btn btn-secondary btn-sm" disabled><i class="fas fa-times"></i> Đã từ chối</button>');
+                            // Đóng modal
+                            $(`#rejectModal-${brandId}`).modal('hide');
+                            // Hiển thị thông báo
+                            toastr.success(response.message);
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error('Có lỗi xảy ra. Vui lòng thử lại.');
+                    }
+                });
+            });
+        });
+    </script>
+}

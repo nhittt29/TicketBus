@@ -1,0 +1,51 @@
+﻿@model TicketBus.Models.ScheduleDetails
+
+@{
+    ViewData["Title"] = "Xóa lịch trình";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Xóa lịch trình</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" asp-area="Admin">Trang chủ</a></li>
+        <li class="breadcrumb-item"><a asp-controller="Schedule" asp-action="Index" asp-area="Admin">Quản lý lịch trình</a></li>
+        <li class="breadcrumb-item active">Xóa lịch trình</li>
+    </ol>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-trash-alt me-1"></i>
+            Xác nhận xóa lịch trình
+        </div>
+        <div class="card-body">
+            <h4>Bạn có chắc chắn muốn xóa lịch trình này?</h4>
+            <dl class="row">
+                <dt class="col-sm-3">Tuyến xe</dt>
+                <dd class="col-sm-9">@Html.DisplayFor(model => model.BusRoute.NameRoute)</dd>
+
+                <dt class="col-sm-3">Hãng xe</dt>
+                <dd class="col-sm-9">@Html.DisplayFor(model => model.BusRoute.Brand.NameBrand)</dd>
+
+                <dt class="col-sm-3">Xe</dt>
+                <dd class="col-sm-9">@Html.DisplayFor(model => model.Coach.NumberPlate)</dd>
+
+                <dt class="col-sm-3">Giờ khởi hành</dt>
+                <dd class="col-sm-9">@Model.DepartTime.ToString(@"hh\:mm")</dd>
+
+                <dt class="col-sm-3">Giờ đến</dt>
+                <dd class="col-sm-9">@Model.ArriveTime.ToString(@"hh\:mm")</dd>
+            </dl>
+
+            <form asp-action="Delete">
+                <input type="hidden" asp-for="IdSchedule" />
+                <div class="form-group mb-3">
+                    <label class="control-label">Lý do xóa (tùy chọn):</label>
+                    <textarea name="reason" class="form-control" rows="3" placeholder="Nhập lý do xóa lịch trình..."></textarea>
+                </div>
+                <input type="submit" value="Xóa" class="btn btn-danger" />
+                <a asp-action="Index" class="btn btn-secondary">Hủy</a>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,262 @@
+﻿@model List<TicketBus.Models.BusRoute>
+
+@{
+    ViewData["Title"] = "Quản lý phê duyệt tuyến xe";
+    ViewData["HeaderTitle"] = "<i class='fas fa-road me-2 text-primary'></i>Quản lý phê duyệt tuyến xe";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+
+    var filterOptions = new List<(string Value, string Text, bool Selected)>
+    {
+        (Url.Action("PendingApproval", "BusRouteApproval", new { area = "Admin", filter = "pending" }), "Chờ phê duyệt", ViewBag.Filter == "pending"),
+        (Url.Action("PendingApproval", "BusRouteApproval", new { area = "Admin", filter = "approved" }), "Đã phê duyệt", ViewBag.Filter == "approved"),
+        (Url.Action("PendingApproval", "BusRouteApproval", new { area = "Admin", filter = "rejected" }), "Đã từ chối", ViewBag.Filter == "rejected")
+    };
+}
+
+<main>
+    <div class="container-fluid px-4">
+        <h1 class="mt-4">Quản lý phê duyệt tuyến xe</h1>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" asp-area="Admin">Dashboard</a></li>
+            <li class="breadcrumb-item active">Quản lý phê duyệt tuyến xe</li>
+        </ol>
+
+        <div class="mb-4">
+            <label for="filterSelect" class="form-label me-2">Lọc theo trạng thái:</label>
+            <select id="filterSelect" class="form-select d-inline-block w-auto" onchange="location = this.value;">
+                @foreach (var option in filterOptions)
+                {
+                    if (option.Selected)
+                    {
+                        <option value="@option.Value" selected>@option.Text</option>
+                    }
+                    else
+                    {
+                        <option value="@option.Value">@option.Text</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-road me-1"></i>
+                Danh sách tuyến xe
+            </div>
+            <div class="card-body">
+                @if (Model == null || !Model.Any())
+                {
+                    <div class="alert alert-info text-center">
+                        @if (ViewBag.Filter == "pending")
+                        {
+                            @: Không có tuyến xe nào đang chờ phê duyệt.
+                        }
+                        else if (ViewBag.Filter == "approved")
+                        {
+                            @: Không có tuyến xe nào đã được phê duyệt.
+                        }
+                        else
+                        {
+                            @: Không có tuyến xe nào đã bị từ chối.
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table id="datatablesSimple" class="table table-striped table-bordered table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Mã tuyến</th>
+                                    <th>Tên tuyến</th>
+                                    <th>Hãng xe</th>
+                                    <th>Thành phố xuất phát</th>
+                                    <th>Thành phố kết thúc</th>
+                                    <th>Khoảng cách (km)</th>
+                                    <th>Điểm đón</th>
+                                    <th>Điểm trả</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var route in Model)
+                                {
+                                    <tr id="row-@route.IdRoute">
+                                        <td>@route.RouteCode</td>
+                                        <td>@route.NameRoute</td>
+                                        <td>@(route.Brand?.NameBrand ?? "Chưa xác định")</td>
+                                        <td>@(route.StartCity?.NameCity ?? "Chưa xác định")</td>
+                                        <td>@(route.EndCity?.NameCity ?? "Chưa xác định")</td>
+                                        <td>@route.Distance</td>
+                                        <td>@(route.Pickups?.Count ?? 0)</td>
+                                        <td>@(route.DropOffs?.Count ?? 0)</td>
+                                        <td class="action-@route.IdRoute">
+                                            <a asp-action="Details" asp-route-id="@route.IdRoute" class="btn btn-info btn-sm me-1">Chi tiết</a>
+                                            @if (route.State == BusRouteState.ChoPheDuyet)
+                                            {
+                                                <button class="btn btn-success btn-sm me-1 approve-btn" data-id="@route.IdRoute" data-bs-toggle="modal" data-bs-target="#approveModal-@route.IdRoute">
+                                                    <i class="fas fa-check"></i> Phê duyệt
+                                                </button>
+                                                <button class="btn btn-danger btn-sm reject-btn" data-id="@route.IdRoute" data-bs-toggle="modal" data-bs-target="#rejectModal-@route.IdRoute">
+                                                    <i class="fas fa-times"></i> Từ chối
+                                                </button>
+                                            }
+                                            else if (route.State == BusRouteState.DaPheDuyet)
+                                            {
+                                                <button class="btn btn-primary btn-sm me-1" disabled>
+                                                    <i class="fas fa-check"></i> Đã phê duyệt
+                                                </button>
+                                            }
+                                            else if (route.State == BusRouteState.TuChoi)
+                                            {
+                                                <button class="btn btn-danger btn-sm" disabled>
+                                                    <i class="fas fa-times"></i> Đã từ chối
+                                                </button>
+                                            }
+                                        </td>
+                                    </tr>
+
+                                    <!-- Modal for Approval Reason -->
+                                    <div class="modal fade" id="approveModal-@route.IdRoute" tabindex="-1" aria-labelledby="approveModalLabel-@route.IdRoute" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="approveModalLabel-@route.IdRoute">Xác nhận phê duyệt tuyến xe @route.RouteCode</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <form id="approveForm-@route.IdRoute">
+                                                        <div class="mb-3">
+                                                            <label for="approvalReason-@route.IdRoute" class="form-label">Lý do phê duyệt (tùy chọn)</label>
+                                                            <textarea class="form-control" id="approvalReason-@route.IdRoute" rows="3"></textarea>
+                                                        </div>
+                                                        <button type="submit" class="btn btn-success">Xác nhận phê duyệt</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Modal for Rejection Reason -->
+                                    <div class="modal fade" id="rejectModal-@route.IdRoute" tabindex="-1" aria-labelledby="rejectModalLabel-@route.IdRoute" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="rejectModalLabel-@route.IdRoute">Lý do từ chối tuyến xe @route.RouteCode</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <form id="rejectForm-@route.IdRoute">
+                                                        <div class="mb-3">
+                                                            <label for="rejectionReason-@route.IdRoute" class="form-label">Lý do từ chối</label>
+                                                            <textarea class="form-control" id="rejectionReason-@route.IdRoute" rows="3" required></textarea>
+                                                        </div>
+                                                        <button type="submit" class="btn btn-danger">Xác nhận từ chối</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</main>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            toastr.options = {
+                closeButton: true,
+                timeOut: 3000,
+                positionClass: 'toast-top-right',
+                preventDuplicates: true,
+                progressBar: true
+            };
+
+            // Handle Approval
+            $('form[id^="approveForm-"]').submit(function (e) {
+                e.preventDefault();
+                var routeId = $(this).attr('id').split('-')[1];
+                var approvalReason = $(`#approvalReason-${routeId}`).val();
+
+                $.ajax({
+                    url: '@Url.Action("Approve", "BusRouteApproval", new { area = "Admin" })',
+                    type: 'POST',
+                    data: { id: routeId, reason: approvalReason },
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    beforeSend: function () {
+                        $(`#approveForm-${routeId} button`).prop('disabled', true).text('Đang xử lý...');
+                    },
+                    success: function (response) {
+                        $(`#approveForm-${routeId} button`).prop('disabled', false).text('Xác nhận phê duyệt');
+                        if (response.success) {
+                            $(`.action-${routeId}`).html('<button class="btn btn-primary btn-sm me-1" disabled><i class="fas fa-check"></i> Đã phê duyệt</button>');
+                            $(`#approveModal-${routeId}`).modal('hide');
+                            toastr.success(response.message);
+                            setTimeout(function () {
+                                window.location.href = '@Url.Action("PendingApproval", "BusRouteApproval", new { area = "Admin", filter = "pending" })';
+                            }, 1500);
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    error: function () {
+                        $(`#approveForm-${routeId} button`).prop('disabled', false).text('Xác nhận phê duyệt');
+                        toastr.error('Có lỗi xảy ra. Vui lòng thử lại.');
+                    }
+                });
+            });
+
+            // Handle Rejection
+            $('form[id^="rejectForm-"]').submit(function (e) {
+                e.preventDefault();
+                var routeId = $(this).attr('id').split('-')[1];
+                var rejectionReason = $(`#rejectionReason-${routeId}`).val();
+
+                if (!rejectionReason) {
+                    toastr.error('Vui lòng nhập lý do từ chối.');
+                    return;
+                }
+
+                $.ajax({
+                    url: '@Url.Action("Reject", "BusRouteApproval", new { area = "Admin" })',
+                    type: 'POST',
+                    data: { id: routeId, reason: rejectionReason },
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    beforeSend: function () {
+                        $(`#rejectForm-${routeId} button`).prop('disabled', true).text('Đang xử lý...');
+                    },
+                    success: function (response) {
+                        $(`#rejectForm-${routeId} button`).prop('disabled', false).text('Xác nhận từ chối');
+                        if (response.success) {
+                            $(`.action-${routeId}`).html('<button class="btn btn-danger btn-sm" disabled><i class="fas fa-times"></i> Đã từ chối</button>');
+                            $(`#rejectModal-${routeId}`).modal('hide');
+                            toastr.success(response.message);
+                            setTimeout(function () {
+                                window.location.href = '@Url.Action("PendingApproval", "BusRouteApproval", new { area = "Admin", filter = "pending" })';
+                            }, 1500);
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    error: function () {
+                        $(`#rejectForm-${routeId} button`).prop('disabled', false).text('Xác nhận từ chối');
+                        toastr.error('Có lỗi xảy ra. Vui lòng thử lại.');
+                    }
+                });
+            });
+        });
+    </script>
+}

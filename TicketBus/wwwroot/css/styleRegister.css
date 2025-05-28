@@ -1,0 +1,34 @@
+﻿/* Style cho container đăng ký */
+.register-container {
+    /* Kế thừa từ auth-container */
+}
+
+/* Style cho input focus */
+.form-floating input:focus,
+.form-floating select:focus {
+    border-color: #28a745;
+    box-shadow: 0 0 8px rgba(40, 167, 69, 0.4);
+}
+
+/* Style cho nút Đăng ký */
+.register-btn {
+    background: linear-gradient(90deg, #28a745, #218838);
+    border: none;
+    padding: 12px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: transform 0.2s ease;
+}
+
+    .register-btn:hover {
+        transform: scale(1.05);
+    }
+
+/* Responsive design */
+@media (max-width: 576px) {
+    .register-btn {
+        font-size: 1rem;
+        padding: 10px;
+    }
+}

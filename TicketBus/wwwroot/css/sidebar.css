@@ -1,0 +1,115 @@
+﻿/* Style cho sidebar và menu điều hướng */
+
+/* Tăng chiều ngang sidebar */
+#layoutSidenav_nav {
+    width: 280px !important; /* Tăng độ rộng từ mặc định (thường là 225px) lên 280px */
+    transition: width 0.3s ease;
+}
+
+/* Khi sidebar bị thu gọn */
+#layoutSidenav.toggled #layoutSidenav_nav {
+    width: 80px !important;
+}
+
+/* Đảm bảo nội dung chính điều chỉnh theo sidebar */
+#layoutSidenav_content {
+    margin-left: 280px !important;
+    transition: margin-left 0.3s ease;
+}
+
+#layoutSidenav.toggled #layoutSidenav_content {
+    margin-left: 80px !important;
+}
+
+/* Định dạng mũi tên trong menu chính */
+.sb-sidenav .nav-link[aria-expanded="true"] .fa-chevron-down {
+    transform: rotate(180deg);
+}
+
+.sb-sidenav .nav-link {
+    color: #adb5bd;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+    position: relative; /* Thêm position: relative để định vị mũi tên tuyệt đối bên trong */
+}
+
+    .sb-sidenav .nav-link .fa-chevron-down {
+        transition: transform 0.2s;
+        position: absolute; /* Đặt vị trí tuyệt đối */
+        right: 1.5rem; /* Đưa mũi tên sát lề phải (cùng padding của nav-link) */
+        top: 50%; /* Căn giữa theo chiều dọc */
+        transform: translateY(-50%); /* Điều chỉnh để căn giữa chính xác */
+        color: #adb5bd;
+    }
+
+/* Định dạng chính cho sidebar */
+.sb-sidenav {
+    background-color: #212529;
+}
+
+/* Định dạng tiêu đề menu */
+.sb-sidenav-menu-heading {
+    color: #adb5bd;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Định dạng các liên kết chính trong sidebar */
+.sb-sidenav .nav-link:hover {
+    color: #ffffff;
+    background-color: #343a40;
+}
+
+/* Định dạng biểu tượng trong liên kết */
+.sb-sidenav .nav-link .sb-nav-link-icon {
+    margin-right: 0.5rem;
+    font-size: 1rem;
+    color: #adb5bd;
+}
+
+.sb-sidenav .nav-link:hover .sb-nav-link-icon {
+    color: #ffffff;
+}
+
+/* Định dạng submenu */
+.sb-sidenav .collapse {
+    background-color: #1c2526;
+}
+
+    .sb-sidenav .collapse .nav-link {
+        padding-left: 3rem !important;
+        color: #adb5bd;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+    }
+
+        .sb-sidenav .collapse .nav-link:hover {
+            color: #ffffff;
+            background-color: #2c3435;
+        }
+
+        /* Định dạng biểu tượng trong submenu */
+        .sb-sidenav .collapse .nav-link .sb-nav-link-icon {
+            font-size: 0.9rem;
+            color: #adb5bd;
+        }
+
+        .sb-sidenav .collapse .nav-link:hover .sb-nav-link-icon {
+            color: #ffffff;
+        }
+
+/* Định dạng footer của sidebar */
+.sb-sidenav-footer {
+    padding: 1rem 1.5rem;
+    color: #adb5bd;
+    background-color: #1c2526;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+    .sb-sidenav-footer .small {
+        font-size: 0.85rem;
+    }

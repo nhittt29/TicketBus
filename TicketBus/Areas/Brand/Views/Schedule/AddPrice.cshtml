@@ -1,0 +1,111 @@
+﻿@using TicketBus.Models.ViewModels
+
+@model TicketBus.Models.ViewModels.AddPriceViewModel
+
+@{
+    ViewData["Title"] = "Thêm giá vé cho lịch trình";
+    Layout = "~/Areas/Brand/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/AddPrice.css" asp-append-version="true" />
+
+
+<!-- Header với icon quay về -->
+<div class="header-section">
+    <a asp-area="Brand" asp-controller="Home" asp-action="Index" class="back-link">
+        <i class="fas fa-arrow-left"></i>
+        Quay về trang quản lý
+    </a>
+</div>
+
+<div class="container">
+    <h2 class="text-primary mb-4">Thêm giá vé</h2>
+
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-success" role="alert">
+            @TempData["Message"]
+        </div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">@Model.ScheduleInfo</h5>
+
+            <!-- Danh sách giá hiện có -->
+            @if (Model.ExistingPrices != null && Model.ExistingPrices.Any())
+            {
+                <h6 class="mt-4">Danh sách giá hiện có:</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Đoạn đường</th>
+                                <th>Giá vé (VNĐ)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var price in Model.ExistingPrices)
+                            {
+                                <tr>
+                                    <td>@price.RouteStopStart?.StopName → @price.RouteStopEnd?.StopName</td>
+                                    <td>@price.PriceValue.ToString("N0")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <p class="text-muted">Chưa có giá vé nào được thiết lập.</p>
+            }
+
+            <!-- Form thêm giá mới -->
+            <h6 class="mt-4">Thêm giá mới:</h6>
+            <form asp-action="AddPrice" method="post">
+                <input type="hidden" asp-for="ScheduleId" />
+                <input type="hidden" asp-for="ScheduleInfo" />
+
+                <div class="mb-3">
+                    <label asp-for="StartStopId" class="form-label">Điểm bắt đầu</label>
+                    <select asp-for="StartStopId" class="form-select" asp-items="@(new SelectList(Model.RouteStops ?? new List<RouteStop>(), "IdStop", "StopName"))">
+                        <option value="">Chọn điểm bắt đầu</option>
+                    </select>
+                    <span asp-validation-for="StartStopId" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="EndStopId" class="form-label">Điểm kết thúc</label>
+                    <select asp-for="EndStopId" class="form-select" asp-items="@(new SelectList(Model.RouteStops ?? new List<RouteStop>(), "IdStop", "StopName"))">
+                        <option value="">Chọn điểm kết thúc</option>
+                    </select>
+                    <span asp-validation-for="EndStopId" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="PriceValue" class="form-label">Giá vé (VNĐ)</label>
+                    <input asp-for="PriceValue" class="form-control" type="number" step="1000" />
+                    <span asp-validation-for="PriceValue" class="text-danger"></span>
+                </div>
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger">
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <p>@error.ErrorMessage</p>
+                        }
+                    </div>
+                }
+
+                <button type="submit" class="btn btn-primary">Thêm giá</button>
+                <a asp-action="Index" class="btn btn-secondary">Quay lại</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

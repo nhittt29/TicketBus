@@ -1,0 +1,472 @@
+﻿@model dynamic
+@{
+    Layout = "~/Areas/Brand/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "ChatBox";
+    ViewData["HeaderTitle"] = "ChatBox";
+    var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+}
+
+<link href="~/css/brand-styles.css" rel="stylesheet" asp-append-version="true" />
+<div class="header-section">
+    <a asp-area="Brand" asp-controller="Home" asp-action="Index" class="back-link">
+        <i class="fas fa-arrow-left"></i>
+        Quay về trang quản lý
+    </a>
+</div>
+
+<div class="container-fluid px-4 py-5">
+    <div class="row">
+        <div class="col-xl-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Danh sách Admin</h5>
+                </div>
+                <div class="card-body chat-user-list" id="adminList">
+                    <p>Chưa có Admin nào chấp nhận yêu cầu.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-8">
+            <div id="chatBox" class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 id="chatWith" class="card-title">Chờ Admin chấp nhận yêu cầu</h5>
+                    <div>
+                        <button id="requestChatButton" class="btn btn-success btn-sm">Yêu cầu chat với Admin</button>
+                        <button id="newChatButton" class="btn btn-secondary btn-sm" style="display: none;">Tạo đoạn chat mới</button>
+                        <button id="deleteChatButton" class="btn btn-danger btn-sm" style="display: none;">Xóa đoạn chat</button>
+                    </div>
+                </div>
+                <div class="card-body chat-content" id="messageContainer">
+                    <div class="text-center mt-5" id="startChatMessage">
+                        <i class="fas fa-comments"></i> Bắt đầu trò chuyện!
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="input-group">
+                        <input type="text" id="messageInput" class="form-control" placeholder="Nhập tin nhắn..." disabled />
+                        <button class="btn btn-primary" id="sendButton" disabled>Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/chatHub")
+            .build();
+
+        let selectedAdminId = null;
+        const currentUserId = "@userId";
+        let users = [];
+        let chatRequestSent = false;
+
+        function updateUserList() {
+            const userList = document.getElementById("adminList");
+            if (!userList) {
+                console.error("adminList element not found");
+                return;
+            }
+            userList.innerHTML = "";
+            if (users.length === 0) {
+                userList.innerHTML = "<p>Chưa có Admin nào chấp nhận yêu cầu.</p>";
+                return;
+            }
+            console.log("Updating user list with:", users);
+            users.forEach(user => {
+                const div = document.createElement("div");
+                div.style.display = "flex";
+                div.style.justifyContent = "space-between";
+                div.style.alignItems = "center";
+                div.style.padding = "12px";
+                div.style.borderRadius = "5px";
+                div.style.marginBottom = "5px";
+                div.style.backgroundColor = "#f8f9fa";
+                div.style.cursor = "pointer";
+
+                const infoSpan = document.createElement("span");
+                infoSpan.textContent = user.adminName || "Admin";
+                infoSpan.addEventListener("click", async () => {
+                    selectedAdminId = user.adminId;
+                    document.getElementById("chatWith").textContent = `Chat với ${user.adminName || "Admin"}`;
+                    document.getElementById("messageInput").disabled = false;
+                    document.getElementById("sendButton").disabled = false;
+                    document.getElementById("startChatMessage").style.display = "none";
+                    document.getElementById("newChatButton").style.display = "inline-block";
+                    document.getElementById("deleteChatButton").style.display = "inline-block";
+                    document.getElementById("requestChatButton").style.display = "none";
+                    await loadChatHistory(user.adminId); // Load chat và đánh dấu đã đọc
+                });
+
+                const buttonWrapper = document.createElement("div");
+                buttonWrapper.style.display = "flex";
+                buttonWrapper.style.alignItems = "center";
+
+                const unreadDot = document.createElement("span");
+                unreadDot.className = "unread-dot";
+                if (user.unreadCount > 0) {
+                    unreadDot.classList.add("show");
+                } else {
+                    unreadDot.classList.remove("show"); // Đảm bảo ẩn khi không có tin nhắn chưa đọc
+                }
+
+                const deleteButton = document.createElement("button");
+                deleteButton.textContent = "Xóa";
+                deleteButton.className = "btn btn-danger btn-sm";
+                deleteButton.addEventListener("click", async () => {
+                    if (confirm(`Bạn có chắc muốn xóa đoạn chat với ${user.adminName || "Admin"}?`)) {
+                        const response = await fetch(`/brand/home/deletechat?receiverId=${user.adminId}`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" }
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            await loadAcceptedAdmins();
+                            if (selectedAdminId === user.adminId) {
+                                resetChatArea();
+                            }
+                            alert(result.message);
+                        } else {
+                            alert(result.message || "Lỗi khi xóa đoạn chat.");
+                        }
+                    }
+                });
+
+                buttonWrapper.appendChild(unreadDot);
+                buttonWrapper.appendChild(deleteButton);
+                div.appendChild(infoSpan);
+                div.appendChild(buttonWrapper);
+                userList.appendChild(div);
+            });
+        }
+
+        function resetChatArea() {
+            selectedAdminId = null;
+            const chatWith = document.getElementById("chatWith");
+            const messageContainer = document.getElementById("messageContainer");
+            const messageInput = document.getElementById("messageInput");
+            const sendButton = document.getElementById("sendButton");
+            const newChatButton = document.getElementById("newChatButton");
+            const deleteChatButton = document.getElementById("deleteChatButton");
+            const requestChatButton = document.getElementById("requestChatButton");
+
+            if (chatWith && messageContainer && messageInput && sendButton && newChatButton && deleteChatButton && requestChatButton) {
+                chatWith.textContent = "Chờ Admin chấp nhận yêu cầu";
+                messageContainer.innerHTML = `
+                    <div class="text-center mt-5" id="startChatMessage">
+                        <i class="fas fa-comments"></i> Bắt đầu trò chuyện!
+                    </div>`;
+                messageInput.disabled = true;
+                sendButton.disabled = true;
+                newChatButton.style.display = "none";
+                deleteChatButton.style.display = "none";
+                requestChatButton.style.display = "inline-block";
+                requestChatButton.disabled = false;
+                requestChatButton.textContent = "Yêu cầu chat với Admin";
+                chatRequestSent = false;
+            } else {
+                console.error("One or more DOM elements not found during resetChatArea");
+            }
+        }
+
+        connection.on("ReceiveMessage", async (senderId, senderName, message, sentDate, isRead) => {
+            console.log("Received message - senderId:", senderId, "currentUserId:", currentUserId, "selectedAdminId:", selectedAdminId);
+
+            // Kiểm tra và cập nhật danh sách Admin khi nhận tin nhắn mới
+            const adminExists = users.find(u => u.adminId === senderId);
+            if (!adminExists && senderId !== currentUserId) {
+                await loadAcceptedAdmins();
+            }
+
+            if (senderId !== currentUserId) {
+                await connection.invoke("CheckUnreadMessages", currentUserId); // Kiểm tra lại số tin nhắn chưa đọc
+                await loadAcceptedAdmins(); // Cập nhật chấm đỏ
+            }
+
+            if (!selectedAdminId && senderId !== currentUserId) {
+                selectedAdminId = senderId;
+                document.getElementById("chatWith").textContent = `Chat với ${users.find(u => u.adminId === senderId)?.adminName || senderName || "Admin"}`;
+                document.getElementById("messageInput").disabled = false;
+                document.getElementById("sendButton").disabled = false;
+                document.getElementById("startChatMessage").style.display = "none";
+                document.getElementById("newChatButton").style.display = "inline-block";
+                document.getElementById("deleteChatButton").style.display = "inline-block";
+                document.getElementById("requestChatButton").style.display = "none";
+                await loadChatHistory(senderId);
+            }
+
+            await loadChatHistory(selectedAdminId || senderId);
+        });
+
+        connection.on("ReceiveMessageReadStatus", (senderId, messageIds) => {
+            console.log("Received read status - senderId:", senderId, "messageIds:", messageIds);
+            if (selectedAdminId !== senderId) return;
+            loadChatHistory(selectedAdminId).then(() => {
+                const messages = document.querySelectorAll(`.message.sent[data-time]`);
+                messages.forEach(element => {
+                    const timeElement = element.querySelector(".time");
+                    if (timeElement && timeElement.textContent.includes("Chưa đọc")) {
+                        timeElement.textContent = timeElement.textContent.replace("Chưa đọc", "Đã đọc");
+                    }
+                });
+            });
+        });
+
+        connection.on("ChatRequestAccepted", async (data) => {
+            console.log("ChatRequestAccepted received:", data);
+            const { receiverId, receiverName } = data;
+            if (!users.some(user => user.adminId === receiverId)) {
+                users.push({ adminId: receiverId, adminName: receiverName || "Admin", unreadCount: 0 });
+                updateUserList();
+            }
+            selectedAdminId = receiverId;
+            document.getElementById("chatWith").textContent = `Chat với ${receiverName || "Admin"}`;
+            document.getElementById("messageInput").disabled = false;
+            document.getElementById("sendButton").disabled = false;
+            document.getElementById("startChatMessage").style.display = "none";
+            document.getElementById("newChatButton").style.display = "inline-block";
+            document.getElementById("deleteChatButton").style.display = "inline-block";
+            document.getElementById("requestChatButton").style.display = "none";
+            await loadChatHistory(receiverId);
+            await loadAcceptedAdmins();
+        });
+
+        connection.on("UpdateAdminUnreadCounts", (unreadCounts) => {
+            console.log("Received UpdateAdminUnreadCounts:", unreadCounts);
+            if (unreadCounts && Array.isArray(unreadCounts)) {
+                users = users.map(user => {
+                    const unreadInfo = unreadCounts.find(uc => uc.SenderId === user.adminId);
+                    return {
+                        ...user,
+                        unreadCount: unreadInfo ? unreadInfo.Count : 0
+                    };
+                });
+                updateUserList(); // Cập nhật danh sách để hiển thị/ẩn chấm đỏ
+            }
+        });
+
+        connection.on("ChatDeleted", (deletedByUserId) => {
+            console.log("Chat deleted by userId:", deletedByUserId);
+            if (selectedAdminId === deletedByUserId) {
+                resetChatArea();
+            }
+            loadAcceptedAdmins();
+        });
+
+        async function loadChatHistory(receiverId) {
+            try {
+                const response = await fetch(`/brand/home/getchathistory?receiverId=${receiverId}`);
+                const messages = await response.json();
+                if (messages.error) {
+                    console.error("Error loading chat history:", messages.error);
+                    return;
+                }
+                const container = document.getElementById("messageContainer");
+                if (container) {
+                    container.innerHTML = "";
+                    if (messages.length === 0) {
+                        container.innerHTML = `
+                            <div class="text-center mt-5" id="startChatMessage">
+                                <i class="fas fa-comments"></i> Bắt đầu trò chuyện!
+                            </div>`;
+                    } else {
+                        messages.sort((a, b) => new Date(a.sentDate) - new Date(b.sentDate));
+                        messages.forEach(msg => {
+                            const vietnamTime = moment.tz(msg.sentDate, "Asia/Ho_Chi_Minh");
+                            const formattedTime = vietnamTime.format("DD/MM/YYYY HH:mm");
+                            const readStatus = msg.isRead ? "Đã đọc" : "Chưa đọc";
+                            const senderName = msg.senderName || (users.find(u => u.adminId === msg.senderId)?.adminName || "Unknown");
+                            const messageElement = msg.senderId === currentUserId
+                                ? `<div class="message sent" data-time="${formattedTime}"><span class="time">${formattedTime} (${readStatus})</span><br><strong>${senderName}</strong><br>${msg.content}</div>`
+                                : `<div class="message received" data-time="${formattedTime}"><span class="time">${formattedTime} (${readStatus})</span><br><strong>${senderName}</strong><br>${msg.content}</div>`;
+                            container.innerHTML += messageElement;
+                        });
+                        container.scrollTop = container.scrollHeight;
+                    }
+                    // Kiểm tra và cập nhật chấm đỏ dựa trên tin nhắn chưa đọc
+                    const hasUnread = messages.some(msg => !msg.isRead && msg.senderId !== currentUserId);
+                    if (hasUnread) {
+                        await connection.invoke("MarkAsRead", currentUserId, receiverId);
+                        await loadAcceptedAdmins(); // Cập nhật chấm đỏ
+                    }
+                    $.ajax({
+                        url: '@Url.Action("GetUnreadMessageCount", "Home", new { area = "Brand" })',
+                        type: 'GET',
+                        success: function (data) {
+                            var unreadCount = data.unreadCount || 0;
+                            $('#chatUnreadCount').addClass('show with-count').text(unreadCount);
+                        },
+                        error: function (err) {
+                            console.error("Error fetching unread message count:", err);
+                        }
+                    });
+                } else {
+                    console.error("messageContainer element not found");
+                }
+            } catch (error) {
+                console.error("Error loading chat history:", error);
+                const container = document.getElementById("messageContainer");
+                if (container) {
+                    container.innerHTML = `
+                        <div class="text-center mt-5">
+                            <p>Đã xảy ra lỗi khi tải lịch sử chat. Vui lòng thử lại.</p>
+                        </div>`;
+                }
+            }
+        }
+
+        document.getElementById("sendButton").addEventListener("click", async () => {
+            const messageInput = document.getElementById("messageInput");
+            const message = messageInput.value.trim();
+            if (message && selectedAdminId && currentUserId) {
+                try {
+                    let senderName = users.find(u => u.adminId === currentUserId)?.adminName || "Brand";
+                    if (senderName === "Brand" || senderName === "Unknown") {
+                        const userResponse = await fetch(`/brand/home/getusername?userId=${currentUserId}`);
+                        const userData = await userResponse.json();
+                        senderName = userData.fullName || "Brand";
+                        users = users.map(u => u.adminId === currentUserId ? { ...u, adminName: senderName } : u);
+                    }
+
+                    const vietnamTime = moment.tz(new Date(), "Asia/Ho_Chi_Minh");
+                    const formattedTime = vietnamTime.format("DD/MM/YYYY HH:mm");
+                    const messageElement = `<div class="message sent" data-time="${formattedTime}"><span class="time">${formattedTime} (Chưa đọc)</span><br><strong>${senderName}</strong><br>${message}</div>`;
+                    const container = document.getElementById("messageContainer");
+                    container.innerHTML += messageElement;
+                    container.scrollTop = container.scrollHeight;
+
+                    await connection.invoke("SendMessage", currentUserId, selectedAdminId, message);
+                    messageInput.value = "";
+                    await loadChatHistory(selectedAdminId);
+                } catch (err) {
+                    console.error("Lỗi khi gửi tin nhắn:", err);
+                    alert("Không thể gửi tin nhắn. Vui lòng thử lại.");
+                    const container = document.getElementById("messageContainer");
+                    container.innerHTML = container.innerHTML.replace(messageElement, "");
+                }
+            } else {
+                alert("Vui lòng nhập tin nhắn và chọn Admin để chat.");
+            }
+        });
+
+        document.getElementById("messageInput").addEventListener("keydown", async (event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                const messageInput = document.getElementById("messageInput");
+                const message = messageInput.value.trim();
+                if (message && selectedAdminId && currentUserId) {
+                    try {
+                        let senderName = users.find(u => u.adminId === currentUserId)?.adminName || "Brand";
+                        if (senderName === "Brand" || senderName === "Unknown") {
+                            const userResponse = await fetch(`/brand/home/getusername?userId=${currentUserId}`);
+                            const userData = await userResponse.json();
+                            senderName = userData.fullName || "Brand";
+                            users = users.map(u => u.adminId === currentUserId ? { ...u, adminName: senderName } : u);
+                        }
+
+                        const vietnamTime = moment.tz(new Date(), "Asia/Ho_Chi_Minh");
+                        const formattedTime = vietnamTime.format("DD/MM/YYYY HH:mm");
+                        const messageElement = `<div class="message sent" data-time="${formattedTime}"><span class="time">${formattedTime} (Chưa đọc)</span><br><strong>${senderName}</strong><br>${message}</div>`;
+                        const container = document.getElementById("messageContainer");
+                        container.innerHTML += messageElement;
+                        container.scrollTop = container.scrollHeight;
+
+                        await connection.invoke("SendMessage", currentUserId, selectedAdminId, message);
+                        messageInput.value = "";
+                        await loadChatHistory(selectedAdminId);
+                    } catch (err) {
+                        console.error("Lỗi khi gửi tin nhắn bằng Enter:", err);
+                        alert("Không thể gửi tin nhắn. Vui lòng thử lại.");
+                        const container = document.getElementById("messageContainer");
+                        container.innerHTML = container.innerHTML.replace(messageElement, "");
+                    }
+                } else {
+                    alert("Vui lòng nhập tin nhắn và chọn Admin để chat.");
+                }
+            }
+        });
+
+        document.getElementById("newChatButton").addEventListener("click", () => {
+            resetChatArea();
+        });
+
+        document.getElementById("deleteChatButton").addEventListener("click", async () => {
+            if (selectedAdminId && confirm("Bạn có chắc muốn xóa đoạn chat với Admin này?")) {
+                const response = await fetch(`/brand/home/deletechat?receiverId=${selectedAdminId}`, { method: "POST" });
+                const result = await response.json();
+                if (result.success) {
+                    await loadAcceptedAdmins();
+                    resetChatArea();
+                    alert(result.message);
+                } else {
+                    alert(result.message || "Lỗi khi xóa đoạn chat.");
+                }
+            }
+        });
+
+        document.getElementById("requestChatButton").addEventListener("click", () => {
+            if (chatRequestSent) return;
+            connection.invoke("RequestChatWithRole", currentUserId, "Admin")
+                .then(() => {
+                    chatRequestSent = true;
+                    const requestButton = document.getElementById("requestChatButton");
+                    if (requestButton) {
+                        requestButton.disabled = true;
+                        requestButton.textContent = "Đã gửi yêu cầu chat";
+                        alert("Yêu cầu chat đã được gửi đến Admin. Vui lòng chờ Admin chấp nhận.");
+                    }
+                })
+                .catch(err => console.error("Lỗi khi gửi yêu cầu chat:", err));
+        });
+
+        async function loadAcceptedAdmins() {
+            try {
+                const response = await fetch('/brand/home/getacceptedadmins');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const usersData = await response.json();
+                if (usersData.error) {
+                    console.error("Error loading accepted admins:", usersData.error);
+                    return;
+                }
+                console.log("Loaded accepted admins:", usersData);
+                users = usersData.map(user => ({
+                    adminId: user.adminId,
+                    adminName: user.adminName || "Admin",
+                    unreadCount: user.unreadCount || 0
+                }));
+                updateUserList();
+            } catch (error) {
+                console.error("Error loading accepted admins:", error);
+                const userList = document.getElementById("adminList");
+                if (userList) {
+                    userList.innerHTML = "<p>Lỗi khi tải danh sách Admin. Vui lòng thử lại.</p>";
+                }
+            }
+        }
+
+        setInterval(async () => {
+            if (users.length === 0) {
+                console.log("No admins in list, checking for updates...");
+                await loadAcceptedAdmins();
+            }
+        }, 5000);
+
+        connection.start()
+            .then(() => {
+                console.log("SignalR connected with userId:", currentUserId);
+                loadAcceptedAdmins();
+                connection.invoke("CheckUnreadMessages", currentUserId);
+                connection.invoke("UserOnline", currentUserId);
+            })
+            .catch(err => console.error("Lỗi khi kết nối SignalR:", err));
+    </script>
+}

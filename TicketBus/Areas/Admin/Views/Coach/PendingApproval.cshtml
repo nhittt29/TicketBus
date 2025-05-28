@@ -1,0 +1,281 @@
+﻿@model IEnumerable<TicketBus.Models.Coach>
+@using System.Text.Json
+
+@{
+    ViewData["Title"] = "Phê duyệt xe";
+    ViewData["HeaderTitle"] = "<i class='fas fa-bus-alt me-2 text-primary'></i>Phê duyệt xe";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+
+    // Tạo danh sách các tùy chọn cho bộ lọc
+    var filterOptions = new List<(string Value, string Text, bool Selected)>
+    {
+        (Url.Action("PendingApproval", "Coach", new { area = "Admin", filter = "pending" }), "Chờ phê duyệt", ViewBag.Filter == "pending"),
+        (Url.Action("PendingApproval", "Coach", new { area = "Admin", filter = "approved" }), "Đã phê duyệt", ViewBag.Filter == "approved"),
+        (Url.Action("PendingApproval", "Coach", new { area = "Admin", filter = "rejected" }), "Từ chối", ViewBag.Filter == "rejected"),
+        (Url.Action("PendingApproval", "Coach", new { area = "Admin", filter = "active" }), "Hoạt động", ViewBag.Filter == "active"),
+        (Url.Action("PendingApproval", "Coach", new { area = "Admin", filter = "inactive" }), "Không hoạt động", ViewBag.Filter == "inactive")
+    };
+}
+
+<main>
+    <div class="container-fluid px-4">
+        <h1 class="mt-4">Phê duyệt xe</h1>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" asp-area="Admin">Dashboard</a></li>
+            <li class="breadcrumb-item active">Phê duyệt xe</li>
+        </ol>
+
+        <!-- Bộ lọc -->
+        <div class="mb-4">
+            <label for="filterSelect" class="form-label me-2">Lọc theo trạng thái:</label>
+            <select id="filterSelect" class="form-select d-inline-block w-auto" onchange="location = this.value;">
+                @foreach (var option in filterOptions)
+                {
+                    if (option.Selected)
+                    {
+                        <option value="@option.Value" selected>@option.Text</option>
+                    }
+                    else
+                    {
+                        <option value="@option.Value">@option.Text</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-bus me-1"></i>
+                Danh sách xe
+            </div>
+            <div class="card-body">
+                @if (Model.Any())
+                {
+                    <table id="datatablesSimple">
+                        <thead>
+                            <tr>
+                                <th>Mã xe</th>
+                                <th>Biển số</th>
+                                <th>Loại xe</th>
+                                <th>Hãng xe</th>
+                                <th>Ảnh xe</th>
+                                <th>Tài liệu</th>
+                                <th>Trạng thái</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var coach in Model)
+                            {
+                                // Deserialize JSON để lấy danh sách ảnh và tài liệu
+                                var images = JsonSerializer.Deserialize<List<string>>(coach.Images) ?? new List<string>();
+                                var documents = JsonSerializer.Deserialize<List<string>>(coach.Documents) ?? new List<string>();
+
+                                <tr id="row-@coach.IdCoach">
+                                    <td>@coach.CoachCode</td>
+                                    <td>@coach.NumberPlate</td>
+                                    <td>@(coach.VehicleType?.NameType ?? "N/A")</td>
+                                    <td>@(coach.Brand?.NameBrand ?? "N/A")</td>
+                                    <td>
+                                        @if (images.Any())
+                                        {
+                                            <img src="@images.First()" alt="Ảnh xe" class="img-fluid" style="max-width: 100px; border-radius: 5px;" />
+                                        }
+                                        else
+                                        {
+                                            <span>Không có ảnh</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (documents.Any())
+                                        {
+                                            <a href="@documents.First()" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-file-alt"></i> Xem tài liệu
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span>Không có tài liệu</span>
+                                        }
+                                    </td>
+                                    <td class="state-@coach.IdCoach">
+                                        @switch (coach.State)
+                                        {
+                                            case CoachState.HoatDong:
+                                                <span class="badge bg-success">Hoạt động</span>
+                                                break;
+                                            case CoachState.KhongHoatDong:
+                                                <span class="badge bg-secondary">Không hoạt động</span>
+                                                break;
+                                            case CoachState.ChoPheDuyet:
+                                                <span class="badge bg-warning text-dark">Chờ phê duyệt</span>
+                                                break;
+                                            case CoachState.DaPheDuyet:
+                                                <span class="badge bg-primary">Đã phê duyệt</span>
+                                                break;
+                                            case CoachState.TuChoi:
+                                                <span class="badge bg-danger">Từ chối</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td class="action-@coach.IdCoach">
+                                        @if (coach.State == CoachState.ChoPheDuyet)
+                                        {
+                                            <button class="btn btn-success btn-sm me-1 approve-btn" data-id="@coach.IdCoach">
+                                                <i class="fas fa-check"></i> Phê duyệt
+                                            </button>
+                                            <button class="btn btn-danger btn-sm reject-btn" data-id="@coach.IdCoach" data-bs-toggle="modal" data-bs-target="#rejectModal-@coach.IdCoach">
+                                                <i class="fas fa-times"></i> Từ chối
+                                            </button>
+                                        }
+                                        else if (coach.State == CoachState.DaPheDuyet)
+                                        {
+                                            <button class="btn btn-primary btn-sm me-1" disabled>
+                                                <i class="fas fa-check"></i> Đã phê duyệt
+                                            </button>
+                                        }
+                                        else if (coach.State == CoachState.TuChoi)
+                                        {
+                                            <button class="btn btn-danger btn-sm" disabled>
+                                                <i class="fas fa-times"></i> Từ chối
+                                            </button>
+                                        }
+                                        else if (coach.State == CoachState.HoatDong)
+                                        {
+                                            <button class="btn btn-success btn-sm me-1" disabled>
+                                                <i class="fas fa-bus"></i> Hoạt động
+                                            </button>
+                                        }
+                                        else if (coach.State == CoachState.KhongHoatDong)
+                                        {
+                                            <button class="btn btn-secondary btn-sm" disabled>
+                                                <i class="fas fa-bus"></i> Không hoạt động
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+
+                                <!-- Modal nhập lý do từ chối -->
+                                <div class="modal fade" id="rejectModal-@coach.IdCoach" tabindex="-1" aria-labelledby="rejectModalLabel-@coach.IdCoach" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="rejectModalLabel-@coach.IdCoach">Lý do từ chối xe @coach.CoachCode</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <form id="rejectForm-@coach.IdCoach">
+                                                    <div class="mb-3">
+                                                        <label for="rejectionReason-@coach.IdCoach" class="form-label">Lý do từ chối</label>
+                                                        <textarea class="form-control" id="rejectionReason-@coach.IdCoach" rows="3" required></textarea>
+                                                    </div>
+                                                    <button type="submit" class="btn btn-danger">Xác nhận từ chối</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="alert alert-info text-center">
+                        @switch (ViewBag.Filter)
+                        {
+                            case "approved":
+                                @: Không có xe nào đã được phê duyệt.
+                                break;
+                            case "rejected":
+                                @: Không có xe nào bị từ chối.
+                                break;
+                            case "active":
+                                @: Không có xe nào đang hoạt động.
+                                break;
+                            case "inactive":
+                                @: Không có xe nào không hoạt động.
+                                break;
+                            case "pending":
+                            default:
+                                @: Không có xe nào đang chờ phê duyệt.
+                                break;
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</main>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Xử lý phê duyệt
+            $('.approve-btn').click(function () {
+                var coachId = $(this).data('id');
+                $.ajax({
+                    url: '@Url.Action("Approve", "Coach", new { area = "Admin" })',
+                    type: 'POST',
+                    data: { id: coachId },
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            // Cập nhật trạng thái
+                            $(`.state-${coachId}`).html('<span class="badge bg-primary">Đã phê duyệt</span>');
+                            // Cập nhật nút hành động
+                            $(`.action-${coachId}`).html('<button class="btn btn-primary btn-sm me-1" disabled><i class="fas fa-check"></i> Đã phê duyệt</button>');
+                            // Hiển thị thông báo
+                            toastr.success(response.message);
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error('Có lỗi xảy ra. Vui lòng thử lại.');
+                    }
+                });
+            });
+
+            // Xử lý từ chối
+            $('form[id^="rejectForm-"]').submit(function (e) {
+                e.preventDefault();
+                var coachId = $(this).attr('id').split('-')[1];
+                var rejectionReason = $(`#rejectionReason-${coachId}`).val();
+
+                if (!rejectionReason) {
+                    toastr.error('Vui lòng nhập lý do từ chối.');
+                    return;
+                }
+
+                $.ajax({
+                    url: '@Url.Action("Reject", "Coach", new { area = "Admin" })',
+                    type: 'POST',
+                    data: { id: coachId, rejectReason: rejectionReason },
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            // Cập nhật trạng thái
+                            $(`.state-${coachId}`).html('<span class="badge bg-danger">Từ chối</span>');
+                            // Cập nhật nút hành động
+                            $(`.action-${coachId}`).html('<button class="btn btn-danger btn-sm" disabled><i class="fas fa-times"></i> Từ chối</button>');
+                            // Đóng modal
+                            $(`#rejectModal-${coachId}`).modal('hide');
+                            // Hiển thị thông báo
+                            toastr.success(response.message);
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error('Có lỗi xảy ra. Vui lòng thử lại.');
+                    }
+                });
+            });
+        });
+    </script>
+}
