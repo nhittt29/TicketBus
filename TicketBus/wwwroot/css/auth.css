@@ -1,6 +1,7 @@
-﻿/* Background gradient cho toàn bộ trang */
+﻿```css
+/* Background gradient cho toàn bộ trang */
 .auth-page {
-    background: linear-gradient(135deg, #e1eebc, #f8f9fa);
+    background: var(--light-blue-background); /* Đồng bộ với stylePage.css (#E6F0FA) */
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -133,3 +134,6 @@ form {
         font-size: 0.85rem;
     }
 }
+
+```
+git checkout master

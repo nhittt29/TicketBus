@@ -6,19 +6,24 @@
 /* Style cho input focus */
 .form-floating input:focus,
 .form-floating select:focus {
-    border-color: #28a745;
-    box-shadow: 0 0 8px rgba(40, 167, 69, 0.4);
+    border-color: #28a745; /* Màu viền khi focus */
+    box-shadow: 0 0 8px rgba(40, 167, 69, 0.4); /* Hiệu ứng shadow với cùng tông màu */
 }
 
 /* Style cho nút Đăng ký */
 .register-btn {
-    background: linear-gradient(90deg, #28a745, #218838);
+    background: var(--accent-color);
+    color: white;
     border: none;
-    padding: 12px;
-    font-size: 1.2rem;
-    font-weight: 600;
-    border-radius: 8px;
-    transition: transform 0.2s ease;
+    border-radius: 10px;
+    padding: 13px 32px;
+    font-weight: 700;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    flex: 1 1 150px;
+    min-width: 150px;
+    align-self: flex-end;
 }
 
     .register-btn:hover {
