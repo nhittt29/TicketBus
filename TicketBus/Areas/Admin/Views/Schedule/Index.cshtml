@@ -1,0 +1,67 @@
+﻿@model IEnumerable<TicketBus.Models.ScheduleDetails>
+
+@{
+    ViewData["Title"] = "Quản lý lịch trình";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Quản lý lịch trình</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" asp-area="Admin">Dashboard</a></li>
+        <li class="breadcrumb-item active">Xem lịch trình</li>
+    </ol>
+
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Message"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Danh sách lịch trình
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Tuyến xe</th>
+                        <th>Hãng xe</th>
+                        <th>Xe</th>
+                        <th>Giờ khởi hành</th>
+                        <th>Giờ đến</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@Html.DisplayFor(modelItem => item.BusRoute.NameRoute)</td>
+                            <td>@Html.DisplayFor(modelItem => item.BusRoute.Brand.NameBrand)</td>
+                            <td>@Html.DisplayFor(modelItem => item.Coach.NumberPlate)</td>
+                            <td>@item.DepartTime.ToString(@"hh\:mm")</td>
+                            <td>@item.ArriveTime.ToString(@"hh\:mm")</td>
+                            <td>
+                                <a asp-action="Details" asp-route-id="@item.IdSchedule" class="btn btn-info btn-sm">Chi tiết</a>
+                                <a asp-action="Delete" asp-route-id="@item.IdSchedule" class="btn btn-danger btn-sm">Xóa</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

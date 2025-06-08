@@ -1,0 +1,47 @@
+﻿@model List<TicketBus.Models.Price>
+
+@{
+    ViewData["Title"] = "Danh sách giá vé";
+    Layout = "~/Areas/Brand/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/IndexPrice.css" asp-append-version="true" />
+
+<!-- Header với icon quay về -->
+<div class="header-section">
+    <a asp-area="Brand" asp-controller="Schedule" asp-action="Index" class="back-link">
+        <i class="fas fa-arrow-left"></i>
+        Quay về danh sách lịch trình
+    </a>
+</div>
+
+<div class="container">
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-warning">Không có giá vé nào.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered table-hover">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Lịch trình</th>
+                        <th>Đoạn đường</th>
+                        <th>Giá vé (VNĐ)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var price in Model)
+                    {
+                        <tr>
+                            <td>@(price.ScheduleDetails?.BusRoute?.NameRoute ?? "Chưa xác định") (Xe: @(price.ScheduleDetails?.Coach?.NumberPlate ?? "Chưa xác định"), Khởi hành: @(price.ScheduleDetails?.DepartTime.ToString("hh\\:mm") ?? "Chưa xác định"))</td>
+                            <td>@(price.RouteStopStart?.StopName ?? "Chưa xác định") → @(price.RouteStopEnd?.StopName ?? "Chưa xác định")</td>
+                            <td>@price.PriceValue.ToString("N0")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

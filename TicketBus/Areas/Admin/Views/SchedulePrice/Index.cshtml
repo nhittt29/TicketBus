@@ -1,0 +1,100 @@
+﻿@model List<TicketBus.Models.ScheduleDetails>
+
+@{
+    ViewData["Title"] = "Quản lý giá vé";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Quản lý giá vé</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" asp-area="Admin">Dashboard</a></li>
+        <li class="breadcrumb-item active">Quản lý giá vé</li>
+    </ol>
+
+    <!-- Tiêu đề -->
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Message"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Danh sách lịch trình và giá vé
+        </div>
+        <div class="card-body">
+            @if (Model == null || !Model.Any())
+            {
+                <div class="alert alert-warning">Không có lịch trình nào.</div>
+            }
+            else
+            {
+                <!-- Bảng hiển thị danh sách lịch trình -->
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>Tuyến đường</th>
+                                <th>Xe</th>
+                                <th>Thời gian khởi hành</th>
+                                <th>Giá vé</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var schedule in Model)
+                            {
+                                <tr>
+                                    <td>@(schedule.BusRoute?.NameRoute ?? "Chưa xác định")</td>
+                                    <td>@(schedule.Coach?.NumberPlate ?? "Chưa xác định")</td>
+                                    <td>@schedule.DepartTime.ToString("hh\\:mm")</td>
+                                    <td>
+                                        @if (schedule.Prices != null && schedule.Prices.Any())
+                                        {
+                                            <ul>
+                                                @foreach (var price in schedule.Prices)
+                                                {
+                                                    <li>
+                                                        @(price.RouteStopStart?.StopName ?? "Chưa xác định") → @(price.RouteStopEnd?.StopName ?? "Chưa xác định"):
+                                                        @price.PriceValue.ToString("N0") VNĐ
+                                                    </li>
+                                                }
+                                            </ul>
+                                        }
+                                        else
+                                        {
+                                            <span>Chưa có giá vé</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <a asp-area="Admin" asp-controller="SchedulePrice" asp-action="EditSchedule" asp-route-id="@schedule.IdSchedule" class="btn btn-warning btn-sm me-1">
+                                            <i class="fas fa-edit"></i> Sửa lịch trình
+                                        </a>
+                                        <a asp-area="Admin" asp-controller="SchedulePrice" asp-action="AddPrice" asp-route-id="@schedule.IdSchedule" class="btn btn-success btn-sm me-1">
+                                            <i class="fas fa-plus"></i> Thêm giá vé
+                                        </a>
+                                        <a asp-area="Admin" asp-controller="SchedulePrice" asp-action="DeleteSchedule" asp-route-id="@schedule.IdSchedule" class="btn btn-danger btn-sm" onclick="return confirm('Bạn có chắc muốn xóa lịch trình này?');">
+                                            <i class="fas fa-trash"></i> Xóa
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

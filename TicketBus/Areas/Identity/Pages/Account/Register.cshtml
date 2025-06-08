@@ -1,0 +1,90 @@
+﻿@page
+@model RegisterModel
+
+@{
+    ViewData["Title"] = "Register";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/styleRegister.css" asp-append-version="true" />
+    <!-- Thêm Font Awesome để sử dụng biểu tượng -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0Q==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+}
+
+<div class="auth-page">
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-4">
+                <div class="auth-container register-container animate__animated animate__fadeIn">
+                    <h1 class="text-center mb-4">@ViewData["Title"]</h1>
+                    @if (TempData["Message"] != null)
+                    {
+                        <div class="alert alert-success" role="alert">
+                            @TempData["Message"]
+                        </div>
+                    }
+                    <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                        <h2 class="text-center mb-3">Tạo tài khoản mới</h2>
+                        <hr class="gradient-hr" />
+                        <div asp-validation-summary="ModelOnly" class="text-danger text-center" role="alert"></div>
+                        <div class="form-floating mb-3 input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input asp-for="Input.FullName" class="form-control" placeholder="Họ và tên" id="Input_FullName" required minlength="2" maxlength="100" />
+                            <label asp-for="Input.FullName" class="form-label">Họ và tên</label>
+                            <span asp-validation-for="Input.FullName" class="text-danger"></span>
+                        </div>
+                        <div class="form-floating mb-3 input-group">
+                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                            <input asp-for="Input.Email" class="form-control" autocomplete="username" placeholder="name@example.com" id="Input_Email" type="email" required />
+                            <label asp-for="Input.Email" class="form-label">Email</label>
+                            <span asp-validation-for="Input.Email" class="text-danger"></span>
+                        </div>
+                        <div class="form-floating mb-3 input-group">
+                            <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                            <input asp-for="Input.PhoneNumber" class="form-control" placeholder="Số điện thoại" id="Input_PhoneNumber" type="tel" required />
+                            <label asp-for="Input.PhoneNumber" class="form-label">Số điện thoại</label>
+                            <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
+                        </div>
+                        <div class="form-floating mb-3 input-group">
+                            <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                            <input asp-for="Input.DateOfBirth" type="date" class="form-control" id="Input_DateOfBirth" required />
+                            <label asp-for="Input.DateOfBirth" class="form-label">Ngày sinh</label>
+                            <span asp-validation-for="Input.DateOfBirth" class="text-danger"></span>
+                        </div>
+                        <div class="form-floating mb-3 input-group">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            <input asp-for="Input.Password" class="form-control" autocomplete="new-password" placeholder="Mật khẩu" id="Input_Password" type="password" required minlength="6" />
+                            <label asp-for="Input.Password" class="form-label">Mật khẩu</label>
+                            <span asp-validation-for="Input.Password" class="text-danger"></span>
+                        </div>
+                        <div class="form-floating mb-3 input-group">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" placeholder="Xác nhận mật khẩu" id="Input_ConfirmPassword" type="password" required />
+                            <label asp-for="Input.ConfirmPassword" class="form-label">Xác nhận mật khẩu</label>
+                            <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+                        </div>
+                        <!-- Dropdown chọn vai trò -->
+                        <div class="form-floating mb-3 input-group">
+                            <span class="input-group-text"><i class="fas fa-user-tag"></i></span>
+                            <select asp-for="Input.Role" class="form-control" id="roleSelect" required>
+                                <option value="">-- Chọn vai trò --</option>
+                                <option value="Brand">Hãng xe (Brand)</option>
+                                <option value="Passenger">Hành khách (Passenger)</option>
+                            </select>
+                            <label asp-for="Input.Role" class="form-label">Vai trò</label>
+                            <span asp-validation-for="Input.Role" class="text-danger"></span>
+                        </div>
+                        <div>
+                            <button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-primary register-btn glow-on-hover">Đăng ký</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Không cần JavaScript để hiển thị/ẩn trường -->
+}

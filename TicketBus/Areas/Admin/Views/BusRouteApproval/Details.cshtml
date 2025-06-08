@@ -1,0 +1,294 @@
+﻿@model TicketBus.Models.BusRoute
+
+@{
+    ViewData["Title"] = "Chi tiết tuyến xe";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+
+    var stateNames = new Dictionary<BusRouteState, string>
+    {
+        { BusRouteState.ChoPheDuyet, "Chờ phê duyệt" },
+        { BusRouteState.DaPheDuyet, "Đã phê duyệt" },
+        { BusRouteState.TuChoi, "Đã từ chối" },
+        { BusRouteState.KhongHoatDong, "Không hoạt động" }
+    };
+}
+
+<main>
+    <div class="container-fluid px-4">
+        <h1 class="mt-4">Chi tiết tuyến xe</h1>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" asp-area="Admin">Dashboard</a></li>
+            <li class="breadcrumb-item"><a asp-controller="BusRouteApproval" asp-action="PendingApproval" asp-area="Admin">Quản lý phê duyệt tuyến xe</a></li>
+            <li class="breadcrumb-item active">Chi tiết tuyến xe</li>
+        </ol>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>Thông tin tuyến xe</h4>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Mã tuyến</dt>
+                    <dd class="col-sm-9">@Model.RouteCode</dd>
+
+                    <dt class="col-sm-3">Tên tuyến</dt>
+                    <dd class="col-sm-9">@Model.NameRoute</dd>
+
+                    <dt class="col-sm-3">Khoảng cách</dt>
+                    <dd class="col-sm-9">@Model.Distance km</dd>
+
+                    <dt class="col-sm-3">Hãng xe</dt>
+                    <dd class="col-sm-9">@(Model.Brand?.NameBrand ?? "Chưa xác định")</dd>
+
+                    <dt class="col-sm-3">Thành phố xuất phát</dt>
+                    <dd class="col-sm-9">@(Model.StartCity?.NameCity ?? "Chưa xác định")</dd>
+
+                    <dt class="col-sm-3">Thành phố kết thúc</dt>
+                    <dd class="col-sm-9">@(Model.EndCity?.NameCity ?? "Chưa xác định")</dd>
+
+                    <dt class="col-sm-3">Thời gian hành trình</dt>
+                    <dd class="col-sm-9">@(Model.TravelTime.HasValue ? Model.TravelTime.Value.ToString(@"hh\:mm") : "Chưa xác định")</dd>
+
+                    <dt class="col-sm-3">Ngày bắt đầu</dt>
+                    <dd class="col-sm-9">@(Model.StartDate.HasValue ? Model.StartDate.Value.ToString("dd/MM/yyyy") : "Chưa xác định")</dd>
+
+                    <dt class="col-sm-3">Trạng thái</dt>
+                    <dd class="col-sm-9">@stateNames[Model.State]</dd>
+                </dl>
+            </div>
+        </div>
+
+        <h4 class="mt-4">Danh sách điểm dừng</h4>
+        @if (Model.RouteStops == null || !Model.RouteStops.Any())
+        {
+            <div class="alert alert-warning">Không có điểm dừng nào.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Thứ tự</th>
+                            <th>Mã điểm dừng</th>
+                            <th>Tên điểm dừng</th>
+                            <th>Thành phố</th>
+                            <th>Thời gian</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var stop in Model.RouteStops.OrderBy(s => s.StopOrder))
+                        {
+                            <tr>
+                                <td>@stop.StopOrder</td>
+                                <td>@stop.StopCode</td>
+                                <td>@(stop.StopName ?? "Không có tên")</td>
+                                <td>@(stop.City?.NameCity ?? "Chưa xác định")</td>
+                                <td>@(stop.Time.HasValue ? stop.Time.Value.ToString(@"hh\:mm") : "Chưa xác định")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <h4 class="mt-4">Danh sách điểm đón</h4>
+        @if (Model.Pickups == null || !Model.Pickups.Any())
+        {
+            <div class="alert alert-warning">Không có điểm đón nào.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Tên điểm đón</th>
+                            <th>Thành phố</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var pickup in Model.Pickups)
+                        {
+                            <tr>
+                                <td>@pickup.PickupName</td>
+                                <td>@(pickup.City?.NameCity ?? "Chưa xác định")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <h4 class="mt-4">Danh sách điểm trả</h4>
+        @if (Model.DropOffs == null || !Model.DropOffs.Any())
+        {
+            <div class="alert alert-warning">Không có điểm trả nào.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Tên điểm trả</th>
+                            <th>Thành phố</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var dropoff in Model.DropOffs)
+                        {
+                            <tr>
+                                <td>@dropoff.DropOffName</td>
+                                <td>@(dropoff.City?.NameCity ?? "Chưa xác định")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <div class="mt-4">
+            @if (Model.State == BusRouteState.ChoPheDuyet)
+            {
+                <button class="btn btn-success me-2 approve-btn" data-id="@Model.IdRoute" data-bs-toggle="modal" data-bs-target="#approveModal">Phê duyệt</button>
+                <button class="btn btn-danger me-2 reject-btn" data-id="@Model.IdRoute" data-bs-toggle="modal" data-bs-target="#rejectModal">Từ chối</button>
+            }
+            <a asp-action="PendingApproval" asp-route-filter="pending" class="btn btn-secondary">Quay lại danh sách</a>
+        </div>
+
+        <!-- Modal for Approval Reason -->
+        <div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="approveModalLabel">Xác nhận phê duyệt tuyến xe @Model.RouteCode</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="approveForm">
+                            <div class="mb-3">
+                                <label for="approvalReason" class="form-label">Lý do phê duyệt (tùy chọn)</label>
+                                <textarea class="form-control" id="approvalReason" rows="3"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-success">Xác nhận phê duyệt</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal for Rejection Reason -->
+        <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="rejectModalLabel">Lý do từ chối tuyến xe @Model.RouteCode</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="rejectForm">
+                            <div class="mb-3">
+                                <label for="rejectionReason" class="form-label">Lý do từ chối</label>
+                                <textarea class="form-control" id="rejectionReason" rows="3" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-danger">Xác nhận từ chối</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            toastr.options = {
+                closeButton: true,
+                timeOut: 3000,
+                positionClass: 'toast-top-right',
+                preventDuplicates: true,
+                progressBar: true
+            };
+
+            // Handle Approval
+            $('#approveForm').submit(function (e) {
+                e.preventDefault();
+                var routeId = @Model.IdRoute;
+                var approvalReason = $('#approvalReason').val();
+
+                $.ajax({
+                    url: '@Url.Action("Approve", "BusRouteApproval", new { area = "Admin" })',
+                    type: 'POST',
+                    data: { id: routeId, reason: approvalReason },
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    beforeSend: function () {
+                        $('#approveForm button').prop('disabled', true).text('Đang xử lý...');
+                    },
+                    success: function (response) {
+                        $('#approveForm button').prop('disabled', false).text('Xác nhận phê duyệt');
+                        if (response.success) {
+                            $('#approveModal').modal('hide');
+                            toastr.success(response.message);
+                            setTimeout(function () {
+                                window.location.href = '@Url.Action("PendingApproval", "BusRouteApproval", new { area = "Admin", filter = "pending" })';
+                            }, 1500);
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    error: function () {
+                        $('#approveForm button').prop('disabled', false).text('Xác nhận phê duyệt');
+                        toastr.error('Có lỗi xảy ra. Vui lòng thử lại.');
+                    }
+                });
+            });
+
+            // Handle Rejection
+            $('#rejectForm').submit(function (e) {
+                e.preventDefault();
+                var routeId = @Model.IdRoute;
+                var rejectionReason = $('#rejectionReason').val();
+
+                if (!rejectionReason) {
+                    toastr.error('Vui lòng nhập lý do từ chối.');
+                    return;
+                }
+
+                $.ajax({
+                    url: '@Url.Action("Reject", "BusRouteApproval", new { area = "Admin" })',
+                    type: 'POST',
+                    data: { id: routeId, reason: rejectionReason },
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    beforeSend: function () {
+                        $('#rejectForm button').prop('disabled', true).text('Đang xử lý...');
+                    },
+                    success: function (response) {
+                        $('#rejectForm button').prop('disabled', false).text('Xác nhận từ chối');
+                        if (response.success) {
+                            $('#rejectModal').modal('hide');
+                            toastr.success(response.message);
+                            setTimeout(function () {
+                                window.location.href = '@Url.Action("PendingApproval", "BusRouteApproval", new { area = "Admin", filter = "pending" })';
+                            }, 1500);
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    error: function () {
+                        $('#rejectForm button').prop('disabled', false).text('Xác nhận từ chối');
+                        toastr.error('Có lỗi xảy ra. Vui lòng thử lại.');
+                    }
+                });
+            });
+        });
+    </script>
+}

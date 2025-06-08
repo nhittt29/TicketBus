@@ -1,0 +1,337 @@
+﻿@model List<TicketBus.Models.Price>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bus Ticket Booking</title>
+    <link rel="stylesheet" href="~/css/styles.css">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+</head>
+<body>
+    <!-- Navbar -->
+    <div class="container-fluid fixed-top custom-navbar">
+        <div class="navbar">
+            <a class="navbar-brand" href="#">
+                <h1>GreenBus</h1>
+            </a>
+            <div class="flag-container">
+                <img class="flag-icon" src="https://flagcdn.com/w40/vn.png" alt="Vietnam Flag">
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Search Bar -->
+        <div class="search-bar">
+            <form asp-action="Index" asp-controller="Trip" method="get">
+                <div class="search-inputs">
+                    <div class="input-group">
+                        <label>Điểm bắt đầu</label>
+                        <div class="custom-dropdown">
+                            <input type="text" name="startPoint" id="startPoint" value="@ViewBag.StartPoint" placeholder="Chọn điểm bắt đầu" readonly>
+                            <button type="button" class="dropdown-toggle">▼</button>
+                            <div class="dropdown-menu">
+                                <div class="dropdown-section">
+                                    <div class="dropdown-item city-header">TỈNH - THÀNH PHỐ</div>
+                                    <div class="dropdown-list city-list">
+                                        @foreach (var city in ViewBag.Cities)
+                                        {
+                                            <div class="dropdown-item city-item" data-value="@city.NameCity">@city.NameCity</div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="swap-icon">↔</div>
+                    <div class="input-group">
+                        <label>Điểm đến</label>
+                        <div class="custom-dropdown">
+                            <input type="text" name="destination" id="destination" value="@ViewBag.Destination" placeholder="Chọn điểm đến" readonly>
+                            <button type="button" class="dropdown-toggle">▼</button>
+                            <div class="dropdown-menu">
+                                <div class="dropdown-section">
+                                    <div class="dropdown-item city-header">TỈNH - THÀNH PHỐ</div>
+                                    <div class="dropdown-list city-list">
+                                        @foreach (var city in ViewBag.Cities)
+                                        {
+                                            <div class="dropdown-item city-item" data-value="@city.NameCity">@city.NameCity</div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Ngày khởi hành</label>
+                        <input type="date" name="departureDate" id="departureDate" value="@ViewBag.DepartureDate" placeholder="Chọn ngày">
+                    </div>
+                    <button type="submit" class="search-btn">Tìm kiếm</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sort-section">
+                    <h3>Sắp xếp</h3>
+                    <form asp-action="Index" asp-controller="Trip" method="get">
+                        <input type="hidden" name="startPoint" value="@ViewBag.StartPoint">
+                        <input type="hidden" name="destination" value="@ViewBag.Destination">
+                        <input type="hidden" name="departureDate" value="@ViewBag.DepartureDate">
+                        <input type="hidden" name="priceRange" value="@ViewBag.PriceRange">
+                        <input type="hidden" name="departureTime" value="@ViewBag.DepartureTime">
+                        <input type="hidden" name="operatorId" value="@ViewBag.OperatorId">
+                        <input type="hidden" name="vehicleTypeId" value="@ViewBag.VehicleTypeId">
+                        <label><input type="radio" name="sortOption" value="default" checked="@(ViewBag.SortOption == "default" || string.IsNullOrEmpty(ViewBag.SortOption))" onchange="this.form.submit()"> Mặc định</label>
+                        <label><input type="radio" name="sortOption" value="earliest" checked="@(ViewBag.SortOption == "earliest")" onchange="this.form.submit()"> Giờ khởi hành sớm nhất</label>
+                        <label><input type="radio" name="sortOption" value="price_asc" checked="@(ViewBag.SortOption == "price_asc")" onchange="this.form.submit()"> Giá tăng dần</label>
+                        <label><input type="radio" name="sortOption" value="price_desc" checked="@(ViewBag.SortOption == "price_desc")" onchange="this.form.submit()"> Giá giảm dần</label>
+                    </form>
+                </div>
+                <div class="filter-section">
+                    <h3>Bộ lọc</h3>
+                    <button class="clear-all" onclick="clearFilters()">Xóa lọc</button>
+                    <form asp-action="Index" asp-controller="Trip" method="get">
+                        <input type="hidden" name="startPoint" value="@ViewBag.StartPoint">
+                        <input type="hidden" name="destination" value="@ViewBag.Destination">
+                        <input type="hidden" name="departureDate" value="@ViewBag.DepartureDate">
+                        <input type="hidden" name="sortOption" value="@ViewBag.SortOption">
+                        <div class="filter-group">
+                            <label>Giá vé</label>
+                            <select name="priceRange" onchange="this.form.submit()">
+                                <option value="">Tất cả</option>
+                                <option value="0-200000" selected="@(ViewBag.PriceRange == "0-200000")">Dưới 200,000 VND</option>
+                                <option value="200000-500000" selected="@(ViewBag.PriceRange == "200000-500000")">200,000 - 500,000 VND</option>
+                                <option value="500000-1000000" selected="@(ViewBag.PriceRange == "500000-1000000")">500,000 - 1,000,000 VND</option>
+                                <option value="1000000-9999999" selected="@(ViewBag.PriceRange == "1000000-9999999")">Trên 1,000,000 VND</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Giờ khởi hành</label>
+                            <select name="departureTime" onchange="this.form.submit()">
+                                <option value="">Tất cả</option>
+                                <option value="morning" selected="@(ViewBag.DepartureTime == "morning")">Sáng (6:00 - 12:00)</option>
+                                <option value="afternoon" selected="@(ViewBag.DepartureTime == "afternoon")">Chiều (12:00 - 18:00)</option>
+                                <option value="evening" selected="@(ViewBag.DepartureTime == "evening")">Tối (18:00 trở đi)</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Nhà xe</label>
+                            <select name="operatorId" onchange="this.form.submit()">
+                                <option value="">Tất cả</option>
+                                @foreach (var op in ViewBag.Operators)
+                                {
+                                    <option value="@op.IdBrand" selected="@(ViewBag.OperatorId == op.IdBrand ? "selected" : null)">@op.NameBrand</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Loại xe</label>
+                            <select name="vehicleTypeId" onchange="this.form.submit()">
+                                <option value="">Tất cả</option>
+                                @foreach (var vt in ViewBag.VehicleTypes)
+                                {
+                                    <option value="@vt.IdType" selected="@(ViewBag.VehicleTypeId == vt.IdType ? "selected" : null)">@vt.NameType</option>
+                                }
+                            </select>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results-section">
+                <h2>Kết quả: @Model.Count chuyến xe</h2>
+                @if (Model.Count == 0)
+                {
+                    <p>Không tìm thấy chuyến xe nào phù hợp.</p>
+                }
+                else
+                {
+                    @foreach (var price in Model)
+                    {
+                        <div class="trip-card">
+                            <div class="direction">Hướng đi: @(price.ScheduleDetails?.BusRoute?.NameRoute ?? "Không xác định")</div>
+                            <div class="trip-details">
+                                <div class="trip-image">
+                                    <img src="@(price.ScheduleDetails?.Coach?.Images ?? "https://via.placeholder.com/100")" alt="Hình xe">
+                                    <span class="instant-booking">Đặt vé tức thì</span>
+                                </div>
+                                <div class="trip-info">
+                                    <h3>Chuyến xe: @(price.ScheduleDetails?.Coach?.NumberPlate ?? "Không xác định")</h3>
+                                    <p>Hãng xe: @(price.ScheduleDetails?.Coach?.Brand?.NameBrand ?? "Không xác định")</p>
+                                    <p>Loại xe: @(price.ScheduleDetails?.Coach?.VehicleType?.NameType ?? "Không xác định")</p>
+                                    <p>
+                                        🕒 ~ @((price.RouteStopStart?.Time != null) ? price.RouteStopStart.Time.Value.ToString(@"hh\:mm") : "N/A") • @(price.RouteStopStart?.StopName ?? "N/A")
+                                    </p>
+                                    <p>
+                                        🕡 ~ @((price.RouteStopEnd?.Time != null) ? price.RouteStopEnd.Time.Value.ToString(@"hh\:mm") : "N/A")  • @(price.RouteStopEnd?.StopName ?? "N/A")
+                                    </p>
+                                    <p class="belongs-to">* Vé thuộc tuyến: @(price.ScheduleDetails?.BusRoute?.NameRoute ?? "N/A")</p>
+                                </div>
+                                <div class="trip-price">
+                                    <p class="discounted-price">
+                                        @(price.PriceValue.ToString("N0")) VND
+                                    </p>
+                                    <p class="seats-left">
+                                        Chỉ còn @(ViewBag.EmptySeats != null && price?.ScheduleDetails?.IdCoach != null && ViewBag.EmptySeats.ContainsKey(price.ScheduleDetails.IdCoach) ? ViewBag.EmptySeats[price.ScheduleDetails.IdCoach] : 0) chỗ trống
+                                    </p>
+                                    <a href="#" class="details-link">Thông tin chi tiết ▼</a>
+                                    <button class="book-btn">Chọn chuyến</button>
+                                </div>
+                            </div>
+
+                            <!-- Trip Details Panel -->
+                            @{
+                                var startCityId = price?.RouteStopStart?.IdCity;
+                                var endCityId = price?.RouteStopEnd?.IdCity;
+                            }
+
+                            <div class="trip-details-panel" style="display: none;">
+                                <h4>Thông tin chi tiết</h4>
+                                <!-- Đón/Trả -->
+                                <div class="details-section">
+                                    <h5>Đón/Trả</h5>
+                                    <div class="pickup-dropoff">
+                                        <div class="pickup">
+                                            <h6>Điểm đón</h6>
+                                            @if (price.ScheduleDetails?.Coach?.Brand?.Pickups?.Any() == true && startCityId.HasValue)
+                                            {
+                                                var filteredPickups = price.ScheduleDetails.Coach.Brand.Pickups
+                                                .Where(pu => pu.IdCity == startCityId)
+                                                .ToList();
+
+                                                if (filteredPickups.Any())
+                                                {
+                                                    <ul>
+                                                        @foreach (var pickup in filteredPickups)
+                                                        {
+                                                            <li>@pickup.PickupName - @pickup.PickupName (@pickup.City?.NameCity)</li>
+                                                        }
+                                                    </ul>
+                                                }
+                                                else
+                                                {
+                                                    <p>Không có điểm đón phù hợp.</p>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <p>Không có thông tin điểm đón.</p>
+                                            }
+                                        </div>
+                                        <div class="dropoff">
+                                            <h6>Điểm trả</h6>
+                                            @if (price.ScheduleDetails?.Coach?.Brand?.DropOffs?.Any() == true && endCityId.HasValue)
+                                            {
+                                                var filteredDropoffs = price.ScheduleDetails.Coach.Brand.DropOffs
+                                                .Where(doff => doff.IdCity == endCityId)
+                                                .ToList();
+
+                                                if (filteredDropoffs.Any())
+                                                {
+                                                    <ul>
+                                                        @foreach (var dropoff in filteredDropoffs)
+                                                        {
+                                                            <li>@dropoff.DropOffName - @dropoff.DropOffName (@dropoff.City?.NameCity)</li>
+                                                        }
+                                                    </ul>
+                                                }
+                                                else
+                                                {
+                                                    <p>Không có điểm trả phù hợp.</p>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <p>Không có thông tin điểm trả.</p>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Tiện ích -->
+                                <!-- Hình ảnh -->
+                                <div class="details-section">
+                                    <h5>Hình ảnh</h5>
+                                    <div class="images-gallery">
+                                        @if (!string.IsNullOrEmpty(price.ScheduleDetails?.Coach?.Images))
+                                        {
+                                            <img src="@price.ScheduleDetails.Coach.Images" alt="Hình xe" class="gallery-image">
+                                        }
+                                        else
+                                        {
+                                            <p>Không có hình ảnh nào.</p>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- End of Trip Details Panel -->
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            // Xử lý dropdown cho Điểm bắt đầu và Điểm đến
+            $('.dropdown-toggle').click(function () {
+                var $dropdown = $(this).siblings('.dropdown-menu');
+                $('.dropdown-menu').not($dropdown).hide();
+                $dropdown.toggle();
+            });
+
+            $('.dropdown-item').click(function () {
+                var value = $(this).data('value');
+                var $input = $(this).closest('.custom-dropdown').find('input');
+                $input.val(value);
+                $(this).closest('.dropdown-menu').hide();
+            });
+
+            $(document).click(function (e) {
+                if (!$(e.target).closest('.custom-dropdown').length) {
+                    $('.dropdown-menu').hide();
+                }
+            });
+
+            // Khởi tạo Datepicker
+            $("#departureDate").datepicker({
+                dateFormat: "yy-mm-dd",
+                minDate: 0, // Không cho chọn ngày quá khứ
+                onSelect: function () {
+                    $(this).closest('form').submit(); // Tự động gửi form khi chọn ngày
+                }
+            });
+
+            // Xử lý click cho liên kết "Thông tin chi tiết"
+            $('.details-link').click(function (e) {
+                e.preventDefault(); // Ngăn hành vi mặc định của thẻ <a>
+                var $panel = $(this).closest('.trip-card').find('.trip-details-panel');
+                $panel.slideToggle(); // Hiển thị/ẩn panel với hiệu ứng
+            });
+        });
+
+        function clearFilters() {
+            // Lấy các giá trị hiện tại của startPoint, destination, departureDate
+            var startPoint = $('#startPoint').val();
+            var destination = $('#destination').val();
+            var departureDate = $('#departureDate').val();
+
+            // Chuyển hướng với các tham số giữ nguyên, chỉ xóa các bộ lọc
+            var url = '@Url.Action("Index", "Trip")' +
+                      '?startPoint=' + encodeURIComponent(startPoint) +
+                      '&destination=' + encodeURIComponent(destination) +
+                      '&departureDate=' + encodeURIComponent(departureDate);
+            window.location.href = url;
+        }
+    </script>
+</body>
+</html>

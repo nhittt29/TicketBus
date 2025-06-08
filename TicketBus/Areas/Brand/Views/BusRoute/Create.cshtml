@@ -1,0 +1,297 @@
+﻿@model TicketBus.Models.ViewModels.BusRouteViewModel
+
+@{
+    ViewData["Title"] = "Đăng ký tuyến xe mới";
+    ViewData["HeaderTitle"] = "<h1>Đăng ký tuyến xe mới</h1>";
+    Layout = "~/Areas/Brand/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/CreateBusRoute.css" asp-append-version="true" />
+
+<!-- Header với icon quay về -->
+<div class="header-section">
+    <a asp-area="Brand" asp-controller="Home" asp-action="Index" class="back-link">
+        <i class="fas fa-arrow-left"></i>
+        Quay về trang quản lý
+    </a>
+</div>
+
+<form asp-action="Create" method="post" id="createForm">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="form-group mb-3">
+        <label asp-for="NameRoute" class="control-label">Tên tuyến</label>
+        <input asp-for="NameRoute" class="form-control" />
+        <span asp-validation-for="NameRoute" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="Distance" class="control-label">Khoảng cách (km)</label>
+        <input asp-for="Distance" class="form-control" type="number" min="1" />
+        <span asp-validation-for="Distance" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="IdBrand" class="control-label">Hãng xe</label>
+        <select asp-for="IdBrand" asp-items="Model.Brands" class="form-control">
+            <option value="">Chọn hãng xe</option>
+        </select>
+        <span asp-validation-for="IdBrand" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="IdStartCity" class="control-label">Tỉnh/Thành phố xuất phát</label>
+        <select asp-for="IdStartCity" asp-items="Model.Cities" class="form-control">
+            <option value="">Chọn thành phố</option>
+        </select>
+        <span asp-validation-for="IdStartCity" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="IdEndCity" class="control-label">Tỉnh/Thành phố kết thúc</label>
+        <select asp-for="IdEndCity" asp-items="Model.Cities" class="form-control">
+            <option value="">Chọn thành phố</option>
+        </select>
+        <span asp-validation-for="IdEndCity" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="TravelTime" class="control-label">Thời gian hành trình (HH:mm)</label>
+        <input asp-for="TravelTime" class="form-control" placeholder="07:00" />
+        <span asp-validation-for="TravelTime" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="StartDate" class="control-label">Ngày bắt đầu hoạt động</label>
+        <input asp-for="StartDate" class="form-control" type="date" />
+        <span asp-validation-for="StartDate" class="text-danger"></span>
+    </div>
+
+    <h4 class="mt-4">Điểm dừng</h4>
+    <div id="route-stops">
+        @for (int i = 0; i < Model.RouteStops.Count; i++)
+        {
+            <div class="form-group route-stop p-3 mb-3 border rounded" data-index="@i">
+                <h5>Điểm dừng @(i + 1)</h5>
+                <input type="hidden" asp-for="RouteStops[i].StopOrder" />
+                <div class="form-group">
+                    <label asp-for="RouteStops[i].StopName" class="control-label">Tên điểm dừng</label>
+                    <input asp-for="RouteStops[i].StopName" class="form-control" id="@($"RouteStops_{i}_StopName")" />
+                    <span asp-validation-for="RouteStops[i].StopName" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="RouteStops[i].IdCity" class="control-label">Tỉnh/Thành phố</label>
+                    <select asp-for="RouteStops[i].IdCity" asp-items="Model.RouteStops[i].Cities" class="form-control stop-city-select" id="@($"RouteStops_{i}_IdCity")"></select>
+                    <span asp-validation-for="RouteStops[i].IdCity" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="RouteStops[i].Time" class="control-label">Thời gian (HH:mm)</label>
+                    <input asp-for="RouteStops[i].Time" class="form-control" placeholder="14:30" id="@($"RouteStops_{i}_Time")" />
+                    <span asp-validation-for="RouteStops[i].Time" class="text-danger"></span>
+                </div>
+                <button type="button" class="btn btn-danger remove-route-stop">Xóa điểm dừng</button>
+            </div>
+        }
+    </div>
+    <button type="button" id="add-route-stop" class="btn btn-secondary mb-3">Thêm điểm dừng</button>
+
+    <h4 class="mt-4">Điểm đón</h4>
+    <div id="pickups">
+        @for (int i = 0; i < Model.Pickups.Count; i++)
+        {
+            <div class="form-group pickup p-3 mb-3 border rounded" data-index="@i">
+                <h5>Điểm đón @(i + 1)</h5>
+                <div class="form-group">
+                    <label asp-for="Pickups[i].PickupName" class="control-label">Tên điểm đón</label>
+                    <input asp-for="Pickups[i].PickupName" class="form-control" id="@($"Pickups_{i}_PickupName")" />
+                    <span asp-validation-for="Pickups[i].PickupName" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="Pickups[i].IdCity" class="control-label">Tỉnh/Thành phố</label>
+                    <select asp-for="Pickups[i].IdCity" asp-items="Model.Pickups[i].Cities" class="form-control pickup-city-select" id="@($"Pickups_{i}_IdCity")"></select>
+                    <span asp-validation-for="Pickups[i].IdCity" class="text-danger"></span>
+                </div>
+                <button type="button" class="btn btn-danger remove-pickup">Xóa điểm đón</button>
+            </div>
+        }
+    </div>
+    <button type="button" id="add-pickup" class="btn btn-secondary mb-3">Thêm điểm đón</button>
+    <span asp-validation-for="Pickups" class="text-danger"></span>
+
+    <h4 class="mt-4">Điểm trả</h4>
+    <div id="dropoffs">
+        @for (int i = 0; i < Model.DropOffs.Count; i++)
+        {
+            <div class="form-group dropoff p-3 mb-3 border rounded" data-index="@i">
+                <h5>Điểm trả @(i + 1)</h5>
+                <div class="form-group">
+                    <label asp-for="DropOffs[i].DropOffName" class="control-label">Tên điểm trả</label>
+                    <input asp-for="DropOffs[i].DropOffName" class="form-control" id="@($"DropOffs_{i}_DropOffName")" />
+                    <span asp-validation-for="DropOffs[i].DropOffName" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="DropOffs[i].IdCity" class="control-label">Tỉnh/Thành phố</label>
+                    <select asp-for="DropOffs[i].IdCity" asp-items="Model.DropOffs[i].Cities" class="form-control dropoff-city-select" id="@($"DropOffs_{i}_IdCity")"></select>
+                    <span asp-validation-for="DropOffs[i].IdCity" class="text-danger"></span>
+                </div>
+                <button type="button" class="btn btn-danger remove-dropoff">Xóa điểm trả</button>
+            </div>
+        }
+    </div>
+    <button type="button" id="add-dropoff" class="btn btn-secondary mb-3">Thêm điểm trả</button>
+    <span asp-validation-for="DropOffs" class="text-danger"></span>
+
+    <div class="form-group mt-3">
+        <input type="submit" value="Đăng ký" class="btn btn-primary" id="submitBtn" />
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Thêm điểm dừng
+            $('#add-route-stop').click(function (e) {
+                e.preventDefault();
+                const index = $('#route-stops .route-stop').length;
+                const newStop = `
+                    <div class="form-group route-stop p-3 mb-3 border rounded" data-index="${index}">
+                        <h5>Điểm dừng ${index + 1}</h5>
+                        <input type="hidden" name="RouteStops[${index}].StopOrder" value="${index}" />
+                        <div class="form-group">
+                            <label class="control-label">Tên điểm dừng</label>
+                            <input name="RouteStops[${index}].StopName" class="form-control" id="RouteStops_${index}_StopName" />
+                            <span class="text-danger field-validation-error" data-valmsg-for="RouteStops[${index}].StopName" data-valmsg-replace="true"></span>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label">Thành phố</label>
+                            <select name="RouteStops[${index}].IdCity" class="form-control stop-city-select" id="RouteStops_${index}_IdCity">
+                                <option value="">Chọn thành phố</option>
+        @foreach (var city in Model.Cities)
+        {
+                                                <option value="@city.Value">@city.Text</option>
+        }
+                            </select>
+                            <span class="text-danger field-validation-error" data-valmsg-for="RouteStops[${index}].IdCity" data-valmsg-replace="true"></span>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label">Thời gian (HH:mm)</label>
+                            <input name="RouteStops[${index}].Time" class="form-control" placeholder="14:30" id="RouteStops_${index}_Time" />
+                            <span class="text-danger field-validation-error" data-valmsg-for="RouteStops[${index}].Time" data-valmsg-replace="true"></span>
+                        </div>
+                        <button type="button" class="btn btn-danger remove-route-stop">Xóa điểm dừng</button>
+                    </div>`;
+                $('#route-stops').append(newStop);
+            });
+
+            // Xử lý xóa điểm dừng
+            $(document).on('click', '.remove-route-stop', function () {
+                $(this).closest('.route-stop').remove();
+                $('#route-stops .route-stop').each(function (index) {
+                    $(this).attr('data-index', index);
+                    $(this).find('h5').text(`Điểm dừng ${index + 1}`);
+                    $(this).find('input[type="hidden"]').attr('name', `RouteStops[${index}].StopOrder`).val(index);
+                    $(this).find('input[name$="StopName"]').attr('name', `RouteStops[${index}].StopName`).attr('id', `RouteStops_${index}_StopName`);
+                    $(this).find('select[name$="IdCity"]').attr('name', `RouteStops[${index}].IdCity`).attr('id', `RouteStops_${index}_IdCity`);
+                    $(this).find('input[name$="Time"]').attr('name', `RouteStops[${index}].Time`).attr('id', `RouteStops_${index}_Time`);
+                    $(this).find('span[data-valmsg-for$="StopName"]').attr('data-valmsg-for', `RouteStops[${index}].StopName`);
+                    $(this).find('span[data-valmsg-for$="IdCity"]').attr('data-valmsg-for', `RouteStops[${index}].IdCity`);
+                    $(this).find('span[data-valmsg-for$="Time"]').attr('data-valmsg-for', `RouteStops[${index}].Time`);
+                });
+            });
+
+            // Thêm điểm đón
+            $('#add-pickup').click(function (e) {
+                e.preventDefault();
+                const index = $('#pickups .pickup').length;
+                const newPickup = `
+                    <div class="form-group pickup p-3 mb-3 border rounded" data-index="${index}">
+                        <h5>Điểm đón ${index + 1}</h5>
+                        <div class="form-group">
+                            <label class="control-label">Tên điểm đón</label>
+                            <input name="Pickups[${index}].PickupName" class="form-control" id="Pickups_${index}_PickupName" />
+                            <span class="text-danger field-validation-error" data-valmsg-for="Pickups[${index}].PickupName" data-valmsg-replace="true"></span>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label">Thành phố</label>
+                            <select name="Pickups[${index}].IdCity" class="form-control pickup-city-select" id="Pickups_${index}_IdCity">
+                                <option value="">Chọn thành phố</option>
+        @foreach (var city in Model.Cities)
+        {
+                                                <option value="@city.Value">@city.Text</option>
+        }
+                            </select>
+                            <span class="text-danger field-validation-error" data-valmsg-for="Pickups[${index}].IdCity" data-valmsg-replace="true"></span>
+                        </div>
+                        <button type="button" class="btn btn-danger remove-pickup">Xóa điểm đón</button>
+                    </div>`;
+                $('#pickups').append(newPickup);
+            });
+
+            // Xử lý xóa điểm đón
+            $(document).on('click', '.remove-pickup', function () {
+                $(this).closest('.pickup').remove();
+                $('#pickups .pickup').each(function (index) {
+                    $(this).attr('data-index', index);
+                    $(this).find('h5').text(`Điểm đón ${index + 1}`);
+                    $(this).find('input[name$="PickupName"]').attr('name', `Pickups[${index}].PickupName`).attr('id', `Pickups_${index}_PickupName`);
+                    $(this).find('select[name$="IdCity"]').attr('name', `Pickups[${index}].IdCity`).attr('id', `Pickups_${index}_IdCity`);
+                    $(this).find('span[data-valmsg-for$="PickupName"]').attr('data-valmsg-for', `Pickups[${index}].PickupName`);
+                    $(this).find('span[data-valmsg-for$="IdCity"]').attr('data-valmsg-for', `Pickups[${index}].IdCity`);
+                });
+            });
+
+            // Thêm điểm trả
+            $('#add-dropoff').click(function (e) {
+                e.preventDefault();
+                const index = $('#dropoffs .dropoff').length;
+                const newDropoff = `
+                    <div class="form-group dropoff p-3 mb-3 border rounded" data-index="${index}">
+                        <h5>Điểm trả ${index + 1}</h5>
+                        <div class="form-group">
+                            <label class="control-label">Tên điểm trả</label>
+                            <input name="DropOffs[${index}].DropOffName" class="form-control" id="DropOffs_${index}_DropOffName" />
+                            <span class="text-danger field-validation-error" data-valmsg-for="DropOffs[${index}].DropOffName" data-valmsg-replace="true"></span>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label">Thành phố</label>
+                            <select name="DropOffs[${index}].IdCity" class="form-control dropoff-city-select" id="DropOffs_${index}_IdCity">
+                                <option value="">Chọn thành phố</option>
+        @foreach (var city in Model.Cities)
+        {
+                                                <option value="@city.Value">@city.Text</option>
+        }
+                            </select>
+                            <span class="text-danger field-validation-error" data-valmsg-for="DropOffs[${index}].IdCity" data-valmsg-replace="true"></span>
+                        </div>
+                        <button type="button" class="btn btn-danger remove-dropoff">Xóa điểm trả</button>
+                    </div>`;
+                $('#dropoffs').append(newDropoff);
+            });
+
+            // Xử lý xóa điểm trả
+            $(document).on('click', '.remove-dropoff', function () {
+                $(this).closest('.dropoff').remove();
+                $('#dropoffs .dropoff').each(function (index) {
+                    $(this).attr('data-index', index);
+                    $(this).find('h5').text(`Điểm trả ${index + 1}`);
+                    $(this).find('input[name$="DropOffName"]').attr('name', `DropOffs[${index}].DropOffName`).attr('id', `DropOffs_${index}_DropOffName`);
+                    $(this).find('select[name$="IdCity"]').attr('name', `DropOffs[${index}].IdCity`).attr('id', `DropOffs_${index}_IdCity`);
+                    $(this).find('span[data-valmsg-for$="DropOffName"]').attr('data-valmsg-for', `DropOffs[${index}].DropOffName`);
+                    $(this).find('span[data-valmsg-for$="IdCity"]').attr('data-valmsg-for', `DropOffs[${index}].IdCity`);
+                });
+            });
+
+            // Kiểm tra số lượng điểm dừng trước khi submit
+            $('#createForm').on('submit', function (e) {
+                const routeStops = document.querySelectorAll('.route-stop');
+                if (routeStops.length < 1) {
+                    e.preventDefault();
+                    alert('Tuyến xe phải có ít nhất 1 điểm dừng.');
+                    return false;
+                }
+            });
+        });
+    </script>
+}

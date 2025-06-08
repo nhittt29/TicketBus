@@ -1,0 +1,263 @@
+﻿body {
+    margin: 0;
+    font-family: "Arial", sans-serif;
+    line-height: 1.6;
+    background-color: #fff;
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #E1EEBC;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    height: 115px;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+}
+
+    .logo img {
+        width: 150px;
+        height: auto;
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+        transition: transform 0.3s ease;
+        margin-left: 10px;
+    }
+
+    .logo span {
+        font-family: 'Poppins', sans-serif;
+        font-size: 24px;
+        font-weight: 600;
+        background: linear-gradient(90deg, #007bff, #28a745);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: 1px;
+    }
+
+.menu a {
+    margin: 0 10px; /* Giảm margin từ 15px xuống 10px để cân đối với header hẹp hơn */
+    text-decoration: none;
+    color: #333;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+    .menu a:hover {
+        color: #ff5733;
+    }
+
+    /* SỬA: Thêm trạng thái active cho menu */
+    .menu a.active {
+        color: #ff5733;
+        border-bottom: 2px solid #ff5733;
+    }
+
+.auth-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Giảm gap từ 10px xuống 8px để cân đối */
+}
+
+.btn-login,
+.btn-register {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    text-decoration: none;
+    margin-right: 10px;
+}
+
+.btn-login {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-register {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-login:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+}
+
+.btn-register:hover {
+    background-color: #218838;
+    transform: scale(1.05);
+}
+
+/* Banner */
+.banner {
+    background: linear-gradient(to right, #ffcc70, #ffeaa7);
+    height: 60vh;
+    min-height: 400px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: #333;
+    padding: 0 20px;
+}
+
+.banner-content {
+    max-width: 800px;
+}
+
+    .banner-content h1 {
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+    }
+
+    .banner-content p {
+        font-size: 1rem;
+        margin-bottom: 30px;
+    }
+
+.btn-booking {
+    padding: 12px 30px;
+    background-color: #ff5722;
+    color: white;
+    font-size: 1rem;
+    border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+    .btn-booking:hover {
+        background-color: #e64a19;
+        transform: scale(1.05);
+    }
+
+/* Dịch vụ */
+.services {
+    text-align: center;
+    padding: 60px 20px;
+    background: #f8f9fa;
+}
+
+    .services h2 {
+        font-size: 2rem;
+        margin-bottom: 40px;
+        color: #333;
+    }
+
+.service-list {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 30px;
+}
+
+.service-item {
+    background: #fff;
+    padding: 20px 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    font-size: 1.1rem;
+    min-width: 200px;
+    transition: transform 0.3s ease;
+}
+
+    .service-item:hover {
+        transform: translateY(-5px);
+    }
+
+/* Phản hồi khách hàng */
+.testimonials {
+    text-align: center;
+    padding: 60px 20px;
+    background: #e9ecef;
+}
+
+    .testimonials h2 {
+        font-size: 2rem;
+        margin-bottom: 30px;
+        color: #333;
+    }
+
+.testimonial-item {
+    background: #fff;
+    padding: 20px 30px;
+    margin: 15px auto;
+    max-width: 600px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    font-style: italic;
+    color: #555;
+}
+
+/* Footer */
+.footer {
+    background: #333;
+    color: white;
+    text-align: center;
+    padding: 20px;
+    font-size: 0.95rem;
+}
+
+.footer-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.footer-links a {
+    color: #fff;
+    text-decoration: none;
+    margin: 0 5px;
+}
+
+    .footer-links a:hover {
+        text-decoration: underline;
+    }
+
+/* SỬA: Thêm media query để tối ưu mobile */
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        padding: 10px 10px; /* Giảm padding trên mobile */
+    }
+
+    .menu {
+        margin-top: 10px;
+    }
+
+        .menu a {
+            margin: 5px 8px; /* Giảm margin trên mobile */
+        }
+
+    .auth-buttons {
+        margin-top: 10px;
+        gap: 6px; /* Giảm gap trên mobile */
+    }
+
+    .service-list {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .service-item {
+        width: 80%;
+    }
+
+    .logo img {
+        width: 80px;
+    }
+
+    .logo span {
+        font-size: 20px;
+    }
+}

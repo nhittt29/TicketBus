@@ -1,0 +1,33 @@
+﻿/* Style cho container đăng nhập */
+.login-container {
+    /* Kế thừa từ auth-container */
+}
+
+/* Style cho input focus */
+.form-floating input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 8px rgba(0, 123, 255, 0.4);
+}
+
+/* Style cho nút Đăng nhập */
+.login-btn {
+    background: linear-gradient(90deg, #007bff, #0056b3);
+    border: none;
+    padding: 12px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: transform 0.2s ease;
+}
+
+    .login-btn:hover {
+        transform: scale(1.05);
+    }
+
+/* Responsive design */
+@media (max-width: 576px) {
+    .login-btn {
+        font-size: 1rem;
+        padding: 10px;
+    }
+}

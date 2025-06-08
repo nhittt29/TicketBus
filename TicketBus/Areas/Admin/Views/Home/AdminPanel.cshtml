@@ -1,0 +1,350 @@
+﻿@model dynamic
+@using TicketBus.Models
+
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Dashboard";
+}
+
+<!-- Liên kết file CSS -->
+<link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+
+<main>
+    <div class="container-fluid px-4">
+        <h1 class="mt-4">Dashboard</h1>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item active">Dashboard</li>
+        </ol>
+        <div class="row">
+            <div class="col-xl-3 col-md-6">
+                <div class="card bg-primary text-white mb-4">
+                    <div class="card-body">Hãng xe chờ phê duyệt: @ViewBag.PendingBrandsCount</div>
+                    <div class="card-footer d-flex align-items-center justify-content-between">
+                        <a class="small text-white stretched-link" asp-controller="BrandApproval" asp-action="Index" asp-area="Admin">Xem chi tiết</a>
+                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card bg-warning text-white mb-4">
+                    <div class="card-body">Tuyến xe chờ phê duyệt: @ViewBag.PendingBusRoutesCount</div>
+                    <div class="card-footer d-flex align-items-center justify-content-between">
+                        <a class="small text-white stretched-link" asp-controller="BusRouteApproval" asp-action="PendingApproval" asp-area="Admin">Xem chi tiết</a>
+                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card bg-success text-white mb-4">
+                    <div class="card-body">Xe chờ phê duyệt: @ViewBag.PendingCoachesCount</div>
+                    <div class="card-footer d-flex align-items-center justify-content-between">
+                        <a class="small text-white stretched-link" asp-controller="Coach" asp-action="PendingApproval" asp-area="Admin">Xem chi tiết</a>
+                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card bg-danger text-white mb-4">
+                    <div class="card-body">Tổng số thông báo: @(((List<Notification>)ViewBag.Notifications).Count)</div>
+                    <div class="card-footer d-flex align-items-center justify-content-between">
+                        <a class="small text-white stretched-link" href="#">Xem chi tiết</a>
+                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xl-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-chart-area me-1"></i>
+                        Số tuyến xe theo trạng thái
+                    </div>
+                    <div class="card-body chart-container"><canvas id="myAreaChart1"></canvas></div>
+                </div>
+            </div>
+            <div class="col-xl-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-chart-bar me-1"></i>
+                        Số xe theo hãng xe
+                    </div>
+                    <div class="card-body chart-container"><canvas id="myBarChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xl-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-chart-area me-1"></i>
+                        Số thông báo theo tháng (6 tháng gần nhất)
+                    </div>
+                    <div class="card-body chart-container"><canvas id="myAreaChart2"></canvas></div>
+                </div>
+            </div>
+            <div class="col-xl-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-chart-pie me-1"></i>
+                        Tỷ lệ thông báo đã đọc/chưa đọc
+                    </div>
+                    <div class="card-body chart-container"><canvas id="myPieChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xl-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-chart-scatter me-1"></i>
+                        Giá vé trung bình theo khoảng cách tuyến xe
+                    </div>
+                    <div class="card-body chart-container">
+                        @if (ViewBag.DataScatterChart != null && ((List<Dictionary<string, object>>)ViewBag.DataScatterChart).Any())
+                        {
+                            <canvas id="scatterChart"></canvas>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info text-center">
+                                Không có dữ liệu để hiển thị biểu đồ giá vé theo khoảng cách.
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thông báo gần đây -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-table me-1"></i>
+                Thông báo gần đây
+            </div>
+            <div class="card-body">
+                @if (ViewBag.Notifications != null && ((List<Notification>)ViewBag.Notifications).Any())
+                {
+                    <table id="datatablesSimple" class="table">
+                        <thead>
+                            <tr>
+                                <th>Thông báo</th>
+                                <th>Ngày tạo</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var notification in (List<Notification>)ViewBag.Notifications)
+                            {
+                                <tr>
+                                    <td>@notification.Message</td>
+                                    <td>@notification.CreatedDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>
+                                        @if (notification.IsRead)
+                                        {
+                                            <span class="badge bg-success">Đã đọc</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">Chưa đọc</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="alert alert-info text-center">
+                        Không có thông báo nào.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</main>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Vẽ Area Chart 1: Số tuyến xe theo trạng thái
+        const ctxArea1 = document.getElementById('myAreaChart1').getContext('2d');
+        const myAreaChart1 = new Chart(ctxArea1, {
+            type: 'line',
+            data: {
+                labels: @Html.Raw(Json.Serialize(ViewBag.LabelsAreaChart1)),
+                datasets: [{
+                    label: 'Số tuyến xe',
+                    data: @Html.Raw(Json.Serialize(ViewBag.DataAreaChart1)),
+                    fill: true,
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Số lượng tuyến xe'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Trạng thái'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Vẽ Area Chart 2: Số thông báo theo tháng
+        const ctxArea2 = document.getElementById('myAreaChart2').getContext('2d');
+        const myAreaChart2 = new Chart(ctxArea2, {
+            type: 'line',
+            data: {
+                labels: @Html.Raw(Json.Serialize(ViewBag.LabelsAreaChart2)),
+                datasets: [{
+                    label: 'Số thông báo',
+                    data: @Html.Raw(Json.Serialize(ViewBag.DataAreaChart2)),
+                    fill: true,
+                    borderColor: 'rgb(255, 99, 132)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Số lượng thông báo'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Tháng'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Vẽ Bar Chart: Số xe theo hãng xe
+        const ctxBar = document.getElementById('myBarChart').getContext('2d');
+        const myBarChart = new Chart(ctxBar, {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(Json.Serialize(ViewBag.LabelsBarChart)),
+                datasets: [{
+                    label: 'Số xe',
+                    data: @Html.Raw(Json.Serialize(ViewBag.DataBarChart)),
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Số lượng xe'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Hãng xe'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Vẽ Pie Chart: Tỷ lệ thông báo đã đọc/chưa đọc
+        const ctxPie = document.getElementById('myPieChart').getContext('2d');
+        const myPieChart = new Chart(ctxPie, {
+            type: 'pie',
+            data: {
+                labels: @Html.Raw(Json.Serialize(ViewBag.LabelsPieChart)),
+                datasets: [{
+                    label: 'Số thông báo',
+                    data: @Html.Raw(Json.Serialize(ViewBag.DataPieChart)),
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(255, 99, 132, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 99, 132, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            boxWidth: 20,
+                            padding: 10,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Vẽ Scatter Chart: Giá vé trung bình theo khoảng cách
+        const ctxScatter = document.getElementById('scatterChart')?.getContext('2d');
+        if (ctxScatter) {
+            const scatterChart = new Chart(ctxScatter, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Giá vé trung bình theo khoảng cách',
+                        data: @Html.Raw(Json.Serialize(ViewBag.DataScatterChart)),
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Khoảng cách (km)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Giá vé trung bình (VNĐ)'
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+}

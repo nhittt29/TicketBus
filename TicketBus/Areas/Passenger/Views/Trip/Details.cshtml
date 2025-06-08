@@ -1,0 +1,345 @@
+﻿<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet" />
+
+<div class="container mt-4">
+    <!-- Trip Information -->
+    <div class="card trip-info-card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-bus-front-fill"></i> Thông tin chuyến đi</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Tuyến xe:</strong> @Model.ScheduleDetails?.BusRoute?.NameRoute</p>
+                    <p><strong>Hãng xe:</strong> @Model.ScheduleDetails?.Coach?.Brand?.NameBrand</p>
+                    <p><strong>Loại xe:</strong> @Model.ScheduleDetails?.Coach?.VehicleType?.NameType</p>
+                    <p><strong>Biển số:</strong> @Model.ScheduleDetails?.Coach?.NumberPlate</p>
+                    <p>
+                        <strong>Ngày khởi hành:</strong>
+                        @if (ViewBag.DepartureDate != null)
+                        {
+                            @(((DateTime)ViewBag.DepartureDate).ToString("dd/MM/yyyy"))
+                        }
+                        else
+                        {
+                            <input type="date" id="departureDateInput" name="departureDate" class="form-control" required
+                                   value="@DateTime.Today.ToString("yyyy-MM-dd")" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                        }
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Điểm đi:</strong> @Model.RouteStopStart?.StopName <small>(@Model.RouteStopStart?.Time?.ToString(@"hh\:mm"))</small></p>
+                    <p><strong>Điểm đến:</strong> @Model.RouteStopEnd?.StopName <small>(@Model.RouteStopEnd?.Time?.ToString(@"hh\:mm"))</small></p>
+                    <p><strong>Giá vé:</strong> @Model.PriceValue.ToString("N0") VND</p>
+                    <p><strong>Số ghế trống:</strong> @(ViewBag.EmptySeats != null && Model?.ScheduleDetails?.IdCoach != null && ViewBag.EmptySeats.ContainsKey(Model.ScheduleDetails.IdCoach) ? ViewBag.EmptySeats[Model.ScheduleDetails.IdCoach] : 0)</p>
+                    <p><strong>Khách hàng:</strong> @ViewBag.CustomerName</p>
+                    <p><strong>Số điện thoại:</strong> @ViewBag.CustomerPhone</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Form -->
+    <form asp-action="Details" asp-controller="Trip" asp-area="Passenger" method="post">
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+        <input type="hidden" name="idPrice" value="@Model.IdPrice" />
+        @if (ViewBag.DepartureDate != null)
+        {
+            <input type="hidden" name="departureDate" value="@(((DateTime)ViewBag.DepartureDate).ToString("yyyy-MM-dd"))" />
+        }
+
+        <nav class="mb-4">
+            <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                <button class="nav-link active" id="nav-ghe-tab" data-bs-toggle="tab" data-bs-target="#nav-ghe" type="button" role="tab" aria-controls="nav-ghe" aria-selected="true">
+                    <i class="bi bi-grid-3x3-gap-fill"></i> Chọn ghế
+                </button>
+                <button class="nav-link" id="nav-diem-tab" data-bs-toggle="tab" data-bs-target="#nav-diem" type="button" role="tab" aria-controls="nav-diem" aria-selected="false">
+                    <i class="bi bi-geo-alt-fill"></i> Điểm đón/trả
+                </button>
+            </div>
+        </nav>
+
+        <div class="tab-content" id="nav-tabContent">
+            <!-- Tab 1: Seat Selection -->
+            <div class="tab-pane fade show active" id="nav-ghe" role="tabpanel" aria-labelledby="nav-ghe-tab">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="bi bi-chair"></i> Chọn vị trí ghế</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (ViewBag.IsSleeper)
+                        {
+                            <div class="seat-grid-sleeper">
+                                <!-- Upper Deck -->
+                                <div class="deck-section">
+                                    <h5>Tầng trên</h5>
+                                    <div class="seat-grid">
+                                        @foreach (Seat seat in ViewBag.UpperDeckSeats)
+                                        {
+                                            <div class="seat-item">
+                                                <input type="checkbox" class="seat-checkbox" name="seatIds" id="seat-@seat.IdSeat" value="@seat.IdSeat"
+                                                       @(seat.State == SeatState.DaDat ? "disabled" : "") data-price="@Model.PriceValue" />
+                                                <label for="seat-@seat.IdSeat" class="seat-label @(seat.State == SeatState.DaDat ? "booked" : "available")">
+                                                    <i class="bi bi-chair"></i> @seat.SeatCode
+                                                </label>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                                <!-- Lower Deck -->
+                                <div class="deck-section">
+                                    <h5>Tầng dưới</h5>
+                                    <div class="seat-grid">
+                                        @foreach (Seat seat in ViewBag.LowerDeckSeats)
+                                        {
+                                            <div class="seat-item">
+                                                <input type="checkbox" class="seat-checkbox" name="seatIds" id="seat-@seat.IdSeat" value="@seat.IdSeat"
+                                                       @(seat.State == SeatState.DaDat ? "disabled" : "") data-price="@Model.PriceValue" />
+                                                <label for="seat-@seat.IdSeat" class="seat-label @(seat.State == SeatState.DaDat ? "booked" : "available")">
+                                                    <i class="bi bi-chair"></i> @seat.SeatCode
+                                                </label>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="seat-grid">
+                                @foreach (Seat seat in ViewBag.SeatList)
+                                {
+                                    <div class="seat-item">
+                                        <input type="checkbox" class="seat-checkbox" name="seatIds" id="seat-@seat.IdSeat" value="@seat.IdSeat"
+                                               @(seat.State == SeatState.DaDat ? "disabled" : "") data-price="@Model.PriceValue" />
+                                        <label for="seat-@seat.IdSeat" class="seat-label @(seat.State == SeatState.DaDat ? "booked" : "available")">
+                                            <i class="bi bi-chair"></i> @seat.SeatCode
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        <div class="mt-3 d-flex gap-2">
+                            <span class="badge bg-light border"><i class="bi bi-circle"></i> Còn trống</span>
+                            <span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> Đang chọn</span>
+                            <span class="badge bg-danger"><i class="bi bi-x-circle-fill"></i> Đã đặt</span>
+                        </div>
+                        <div class="price-info card mt-3">
+                            <div class="card-body">
+                                <p><strong>Giá mỗi ghế:</strong> <span id="price-per-seat">@Model.PriceValue.ToString("N0")</span> VND</p>
+                                <p><strong>Tổng giá:</strong> <span id="total-price">0</span> VND</p>
+                            </div>
+                        </div>
+                        <div class="alert alert-warning alert-max-seats mt-3" id="max-seats-alert">
+                            Bạn chỉ được chọn tối đa 4 ghế!
+                        </div>
+                        <div class="text-end mt-3">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Pickup/Dropoff Selection -->
+            <div class="tab-pane fade" id="nav-diem" role="tabpanel" aria-labelledby="nav-diem-tab">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="bi bi-geo-alt"></i> Điểm đón</h5>
+                            </div>
+                            <div class="card-body">
+                                @foreach (Pickup pickup in ViewBag.PickUpList)
+                                {
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="diemDi" id="pickup-@pickup.IdPickup" value="@pickup.IdPickup" required />
+                                        <label class="form-check-label" for="pickup-@pickup.IdPickup">
+                                            <i class="bi bi-geo-alt-fill"></i> @pickup.PickupName (@pickup.City?.NameCity)
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5><i class="bi bi-flag"></i> Điểm trả</h5>
+                            </div>
+                            <div class="card-body">
+                                @foreach (DropOff dropOff in ViewBag.DropOffList)
+                                {
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="diemDen" id="dropoff-@dropOff.IdDropOff" value="@dropOff.IdDropOff" required />
+                                        <label class="form-check-label" for="dropoff-@dropOff.IdDropOff">
+                                            <i class="bi bi-flag-fill"></i> @dropOff.DropOffName (@dropOff.City?.NameCity)
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-ticket-detailed-fill"></i> Đặt vé
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+    .seat-checkbox {
+        display: none;
+    }
+
+    .seat-label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+        border: 2px solid var(--border);
+        border-radius: 8px;
+        margin: 5px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+        width: 80px;
+        height: 50px;
+    }
+
+        .seat-label.available {
+            background-color: #e6f3e6;
+            border-color: var(--secondary);
+        }
+
+        .seat-label.selected {
+            background-color: var(--secondary);
+            color: #fff;
+            border-color: darken(var(--secondary), 10%);
+        }
+
+        .seat-label.booked {
+            background-color: #f8d7da;
+            border-color: var(--danger);
+            cursor: not-allowed;
+        }
+
+        .seat-label.disabled {
+            background-color: #e9ecef;
+            border-color: var(--border);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+    .seat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+        gap: 10px;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .seat-grid-sleeper {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .deck-section {
+        border: 1px solid var(--border);
+        padding: 15px;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+    }
+
+        .deck-section h5 {
+            font-size: 1.1rem;
+            color: var(--primary);
+        }
+
+    .form-check-input:checked {
+        background-color: var(--secondary);
+        border-color: var(--secondary);
+    }
+
+    .price-info {
+        background-color: #f1f1f1;
+        border-radius: 8px;
+        padding: 15px;
+    }
+
+    .alert-max-seats {
+        display: none;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const seatCheckboxes = document.querySelectorAll('.seat-checkbox');
+        const totalPriceElement = document.getElementById('total-price');
+        const maxSeatsAlert = document.getElementById('max-seats-alert');
+        const maxSeats = 4;
+        const departureDateInput = document.getElementById('departureDateInput');
+
+        function updateTotalPrice() {
+            let total = 0;
+            seatCheckboxes.forEach(checkbox => {
+                if (checkbox.checked && !checkbox.disabled) {
+                    total += parseFloat(checkbox.getAttribute('data-price'));
+                }
+            });
+            totalPriceElement.textContent = total.toLocaleString('vi-VN');
+        }
+
+        function updateSeatAvailability() {
+            const selectedCount = Array.from(seatCheckboxes).filter(checkbox => checkbox.checked && !checkbox.disabled).length;
+            seatCheckboxes.forEach(checkbox => {
+                const label = document.querySelector(`label[for="${checkbox.id}"]`);
+                if (selectedCount >= maxSeats && !checkbox.checked && !checkbox.disabled) {
+                    checkbox.disabled = true;
+                    label.classList.remove('available');
+                    label.classList.add('disabled');
+                } else if (!checkbox.checked && !label.classList.contains('booked')) {
+                    checkbox.disabled = false;
+                    label.classList.remove('disabled');
+                    label.classList.add('available');
+                }
+                if (checkbox.checked && !checkbox.disabled) {
+                    label.classList.remove('available');
+                    label.classList.add('selected');
+                } else if (!checkbox.checked && !label.classList.contains('booked')) {
+                    label.classList.remove('selected');
+                    label.classList.add('available');
+                }
+            });
+            maxSeatsAlert.style.display = selectedCount >= maxSeats ? 'block' : 'none';
+        }
+
+        seatCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function () {
+                updateTotalPrice();
+                updateSeatAvailability();
+            });
+        });
+
+        if (departureDateInput) {
+            departureDateInput.addEventListener('change', function () {
+                const form = document.querySelector('form[asp-action="Details"]');
+                let hiddenInput = form.querySelector('input[name="departureDate"]');
+                if (!hiddenInput) {
+                    hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'departureDate';
+                    form.appendChild(hiddenInput);
+                }
+                hiddenInput.value = this.value;
+            });
+        }
+
+        updateTotalPrice();
+        updateSeatAvailability();
+    });
+</script>

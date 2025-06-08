@@ -1,0 +1,135 @@
+﻿/* Background gradient cho toàn bộ trang */
+.auth-page {
+    background: linear-gradient(135deg, #e1eebc, #f8f9fa);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 0;
+}
+
+/* Container chung cho form */
+.auth-container {
+    background-color: #fff;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+    /* Hiệu ứng khi hover vào container */
+    .auth-container:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+    }
+
+/* Style cho form */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Style cho hr (gradient) */
+.gradient-hr {
+    border: 0;
+    height: 2px;
+    background: linear-gradient(to right, #007bff, #28a745);
+    margin: 20px 0;
+}
+
+/* Style cho input group (bao gồm biểu tượng) */
+.input-group {
+    position: relative;
+}
+
+.input-group-text {
+    background-color: #f8f9fa;
+    border: 1px solid #ced4da;
+    border-right: none;
+    border-radius: 8px 0 0 8px;
+    color: #555;
+}
+
+.form-floating input,
+.form-floating select {
+    border-radius: 0 8px 8px 0;
+    border: 1px solid #ced4da;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    padding-left: 10px;
+}
+
+    .form-floating input:focus,
+    .form-floating select:focus {
+        outline: none;
+    }
+
+/* Style cho label */
+.form-floating label {
+    color: #666;
+    padding-left: 40px; /* Để nhãn không đè lên biểu tượng */
+}
+
+/* Style cho checkbox */
+.checkbox label {
+    color: #333;
+    font-size: 0.95rem;
+}
+
+/* Hiệu ứng ánh sáng khi hover */
+.glow-on-hover {
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+    .glow-on-hover:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        transition: 0.5s;
+        z-index: -1;
+    }
+
+    .glow-on-hover:hover:before {
+        left: 100%;
+    }
+
+/* Style cho các liên kết */
+.text-center a {
+    color: #007bff;
+    text-decoration: none;
+    margin: 0 5px;
+    font-size: 0.95rem;
+    transition: color 0.3s ease;
+}
+
+    .text-center a:hover {
+        color: #0056b3;
+        text-decoration: underline;
+    }
+
+/* Style cho thông báo lỗi */
+.text-danger {
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+/* Responsive design */
+@media (max-width: 576px) {
+    .auth-container {
+        padding: 25px;
+    }
+
+    .form-floating label {
+        font-size: 0.9rem;
+    }
+
+    .text-center a {
+        font-size: 0.85rem;
+    }
+}

@@ -1,0 +1,45 @@
+﻿@model TicketBus.Models.ScheduleDetails
+
+@{
+    ViewData["Title"] = "Chi tiết lịch trình";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Chi tiết lịch trình</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" asp-area="Admin">Trang chủ</a></li>
+        <li class="breadcrumb-item"><a asp-controller="Schedule" asp-action="Index" asp-area="Admin">Quản lý lịch trình</a></li>
+        <li class="breadcrumb-item active">Chi tiết lịch trình</li>
+    </ol>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-info-circle me-1"></i>
+            Thông tin lịch trình
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Tuyến xe</dt>
+                <dd class="col-sm-9">@Html.DisplayFor(model => model.BusRoute.NameRoute)</dd>
+
+                <dt class="col-sm-3">Hãng xe</dt>
+                <dd class="col-sm-9">@Html.DisplayFor(model => model.BusRoute.Brand.NameBrand)</dd>
+
+                <dt class="col-sm-3">Xe</dt>
+                <dd class="col-sm-9">@Html.DisplayFor(model => model.Coach.NumberPlate)</dd>
+
+                <dt class="col-sm-3">Giờ khởi hành</dt>
+                <dd class="col-sm-9">@Model.DepartTime.ToString(@"hh\:mm")</dd>
+
+                <dt class="col-sm-3">Giờ đến</dt>
+                <dd class="col-sm-9">@Model.ArriveTime.ToString(@"hh\:mm")</dd>
+            </dl>
+
+            <div>
+                <a asp-action="Index" class="btn btn-secondary">Quay lại</a>
+                <a asp-action="Delete" asp-route-id="@Model.IdSchedule" class="btn btn-danger">Xóa lịch trình</a>
+            </div>
+        </div>
+    </div>
+</div>
