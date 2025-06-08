@@ -1,0 +1,242 @@
+﻿/* Header quay về trang quản lý */
+.header-section {
+    background: linear-gradient(90deg, #007bff, #0056b3); /* Gradient màu xanh */
+    padding: 15px 25px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    color: #fff;
+}
+
+.back-link {
+    color: #fff;
+    text-decoration: none;
+    font-size: 18px;
+    margin-right: 10px;
+    transition: color 0.3s ease;
+}
+
+    .back-link:hover {
+        color: #ddd;
+    }
+
+.header-title {
+    font-size: 18px;
+    margin: 0;
+    color: #fff;
+}
+
+/* Filter section */
+.filter-section {
+    margin-top: 40px; /* Khoảng cách từ header */
+}
+
+    .filter-section .row {
+        justify-content: center; /* Đảm bảo hàng chứa các cột được căn giữa */
+    }
+
+/* Container */
+.container {
+    padding: 0; /* Loại bỏ padding để bảng dính sát viền */
+    background-color: #f8f9fa;
+    /* Loại bỏ border-radius để bỏ hiệu ứng mờ góc */
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    margin-top: 20px;
+    overflow: hidden; /* Đảm bảo bảng không vượt ra ngoài container */
+}
+
+/* Alert */
+.alert-success {
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    font-weight: 500;
+    transition: opacity 0.3s ease;
+}
+
+    .alert-success .btn-close {
+        color: #155724;
+        opacity: 0.8;
+    }
+
+        .alert-success .btn-close:hover {
+            opacity: 1;
+        }
+
+/* Bảng */
+.table-responsive {
+    margin-top: 0; /* Loại bỏ margin-top để dính sát container */
+    overflow-x: auto;
+    /* Loại bỏ border-radius để bỏ hiệu ứng mờ góc */
+    overflow-y: hidden;
+}
+
+.table {
+    margin-bottom: 0;
+    font-size: 0.95rem;
+    border-collapse: collapse;
+    width: 100%;
+    background-color: #fff;
+    /* Loại bỏ border-radius để bỏ hiệu ứng mờ góc */
+    overflow: hidden;
+}
+
+.table-bordered {
+    border: 2px solid #dee2e6;
+}
+
+    .table-bordered th,
+    .table-bordered td {
+        border: 1px solid #dee2e6;
+        padding: 12px 15px;
+        vertical-align: middle;
+        text-align: center;
+        transition: background-color 0.2s ease;
+    }
+
+.table th {
+    background-color: #2c3e50;
+    color: #fff;
+    font-weight: 600;
+}
+
+.table thead th {
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #1a252f;
+}
+
+.table tbody tr:nth-of-type(odd) {
+    background-color: #f8f9fa;
+}
+
+.table-striped tbody tr:hover {
+    background-color: #f1f5f9;
+    transform: scale(1.01); /* Hiệu ứng zoom nhẹ khi hover */
+}
+
+/* Custom trạng thái */
+.table td:nth-child(10), /* Trạng thái thanh toán */
+.table td:nth-child(11) { /* Trạng thái vé */
+    font-weight: 500;
+}
+
+    .table td:nth-child(10):contains("Đã thanh toán"),
+    .table td:nth-child(11):contains("Đã thanh toán") {
+        color: #28a745;
+    }
+
+    .table td:nth-child(10):contains("Chưa thanh toán"),
+    .table td:nth-child(11):contains("Chưa thanh toán") {
+        color: #dc3545;
+    }
+
+/* Nút */
+.btn-info {
+    padding: 6px 12px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+    .btn-info:hover {
+        background-color: #138496;
+        transform: translateY(-1px);
+    }
+
+.btn-primary {
+    padding: 12px 30px;
+    font-size: 16px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #007bff, #0056b3);
+    border: none;
+    transition: all 0.3s ease;
+}
+
+    .btn-primary:hover {
+        background: linear-gradient(90deg, #0056b3, #003d7a);
+        transform: translateY(-2px);
+    }
+
+/* Các lớp bổ sung */
+.alert {
+    font-size: 15px;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.mt-4 {
+    margin-top: 1.5rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding: 0;
+    }
+
+    .table th,
+    .table td {
+        font-size: 12px;
+        padding: 8px;
+    }
+
+    .btn-info,
+    .btn-primary {
+        font-size: 12px;
+        padding: 8px 15px;
+    }
+
+    .header-title {
+        font-size: 16px;
+    }
+
+    .back-link {
+        font-size: 16px;
+    }
+
+        .back-link i {
+            font-size: 1rem;
+        }
+}
+
+@media (max-width: 576px) {
+    .container {
+        padding: 0;
+    }
+
+    .table th,
+    .table td {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+    }
+
+    .btn-info,
+    .btn-primary {
+        font-size: 10px;
+        padding: 6px 12px;
+    }
+
+    .back-link {
+        font-size: 0.9rem;
+    }
+
+        .back-link i {
+            font-size: 0.9rem;
+        }
+
+    .header-title {
+        font-size: 14px;
+    }
+
+    .alert-success {
+        font-size: 0.9rem;
+        padding: 10px;
+    }
+}
