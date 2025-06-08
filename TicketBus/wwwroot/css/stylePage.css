@@ -181,7 +181,7 @@ body {
     .logo span {
         font-size: 24px;
         font-weight: 600;
-        color: var(--logo-text-color); /* Sử dụng màu mới cho tên web */
+        color: #8DD8FF;
         letter-spacing: 2px;
     }
 

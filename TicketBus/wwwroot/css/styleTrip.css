@@ -1,0 +1,347 @@
+﻿```css
+body {
+    background-color: #E6F3E6;
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    min-height: 100vh; /* Đảm bảo body chiếm toàn bộ chiều cao màn hình */
+    display: flex;
+    flex-direction: column;
+}
+
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #0056b3;
+    --accent-color: #ff6f61;
+    --background-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --logo-text-color: #5B99C2;
+    --light-green-background: #E6F3E6;
+    --soft-green: #28a745;
+    --light-gray: #f8f9fa;
+}
+
+/* Navbar */
+.custom-navbar {
+    background-color: #E6F3E6;
+    padding: 10px 20px;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navbar-brand h1 {
+    color: var(--soft-green);
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.btn-outline-primary {
+    color: var(--soft-green);
+    border-color: var(--soft-green);
+    font-weight: 600;
+}
+
+    .btn-outline-primary:hover {
+        background-color: var(--soft-green);
+        color: white;
+    }
+
+.flag-container img {
+    width: 30px;
+    height: 20px;
+}
+
+/* Search Bar */
+.search-bar {
+    margin-top: 100px; /* Tăng khoảng cách từ header để không bị sát */
+    padding: 20px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    flex: 1; /* Cho phép search-bar mở rộng để cân đối */
+}
+
+.search-inputs {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.input-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+    .input-group label {
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 5px;
+        display: block;
+    }
+
+.custom-dropdown {
+    position: relative;
+}
+
+    .custom-dropdown input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ced4da;
+        border-radius: 5px;
+        background-color: #fff;
+    }
+
+    .custom-dropdown .dropdown-toggle {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        border: none;
+        background: none;
+        cursor: pointer;
+    }
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background-color: white;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.dropdown-item {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+    .dropdown-item:hover {
+        background-color: #f0f0f0;
+    }
+
+.swap-icon {
+    font-size: 20px;
+    align-self: center;
+    cursor: pointer;
+    color: var(--soft-green);
+}
+
+input[type="date"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+}
+
+.search-btn {
+    background-color: var(--soft-green);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 32px;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+    .search-btn:hover {
+        background-color: #218838;
+    }
+
+/* Main Content */
+.main-content {
+    display: flex;
+    flex: 1; /* Cho phép main-content chiếm phần còn lại */
+    margin-top: 20px;
+    gap: 20px;
+}
+
+.sidebar {
+    flex: 1;
+    background-color: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    min-width: 250px;
+}
+
+.sort-section h3,
+.filter-section h3 {
+    font-size: 18px;
+    margin-bottom: 15px;
+    color: var(--soft-green);
+}
+
+.sort-section label,
+.filter-section label {
+    display: block;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.sort-section input[type="radio"],
+.filter-section select {
+    margin-right: 10px;
+}
+
+.clear-all {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 15px;
+}
+
+    .clear-all:hover {
+        background-color: #c82333;
+    }
+
+.results-section {
+    flex: 3;
+}
+
+    .results-section h2 {
+        color: var(--soft-green);
+        margin-bottom: 15px;
+    }
+
+.trip-card {
+    background-color: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 15px;
+}
+
+.direction {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.trip-details {
+    display: flex;
+    gap: 15px;
+}
+
+.trip-image img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 5px;
+}
+
+.instant-booking {
+    background-color: var(--soft-green);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-size: 12px;
+}
+
+.trip-info {
+    flex: 2;
+}
+
+    .trip-info h3,
+    .trip-info p {
+        margin: 5px 0;
+        color: #333;
+    }
+
+.trip-price {
+    flex: 1;
+    text-align: right;
+}
+
+.discounted-price {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--soft-green);
+}
+
+.book-btn {
+    background-color: var(--soft-green);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+    .book-btn:hover {
+        background-color: #218838;
+    }
+
+.trip-details-panel {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+}
+
+.details-section h5 {
+    color: var(--soft-green);
+    margin-bottom: 10px;
+}
+
+.pickup-dropoff {
+    display: flex;
+    gap: 15px;
+}
+
+.pickup, .dropoff {
+    flex: 1;
+}
+
+.images-gallery img {
+    width: 100%;
+    max-width: 200px;
+    border-radius: 5px;
+}
+
+/* Footer */
+footer {
+    background-color: #E6F3E6;
+    padding: 80px;
+    text-align: center;
+    color: #333;
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        flex-direction: column;
+    }
+
+    .trip-details {
+        flex-direction: column;
+    }
+
+    .trip-image img {
+        width: 100%;
+        height: auto;
+    }
+
+    .search-bar {
+        margin-top: 80px; /* Giảm margin-top trên mobile để phù hợp */
+    }
+}
+
+```
