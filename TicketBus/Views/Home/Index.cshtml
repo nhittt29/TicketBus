@@ -1,21 +1,44 @@
-﻿@* Views/Home/Index.cshtml *@
-@{
+﻿@{
     ViewData["Title"] = "Trang chủ";
 }
 
-<!-- Banner -->
-<section class="banner">
-    <div class="banner-content">
-        <h1>Đặt Vé Xe Buýt Nhanh Chóng & Tiện Lợi</h1>
-        <p>Trải nghiệm dịch vụ đặt vé xe buýt dễ dàng, tiết kiệm thời gian!</p>
-        <a href="#datve" class="btn-booking">Đặt vé ngay</a>
-    </div>
+<!-- Hero Section -->
+<section class="hero" aria-label="Hero Section">
+    <h1>Đặt Vé Xe Buýt Nhanh Chóng & Tiện Lợi</h1>
+    <p>Trải nghiệm dịch vụ đặt vé xe buýt dễ dàng, tiết kiệm thời gian!</p>
+    <form class="search-form" asp-controller="Booking" asp-action="Search" method="get" aria-label="Search Bus Tickets">
+        <div>
+            <label for="origin">Từ</label>
+            <select id="origin" name="origin" required>
+                <option value="">Chọn điểm xuất phát</option>
+                <option value="Hanoi">Hà Nội</option>
+                <option value="Ho Chi Minh City">TP. Hồ Chí Minh</option>
+                <option value="Da Nang">Đà Nẵng</option>
+                <option value="Hue">Huế</option>
+            </select>
+        </div>
+        <div>
+            <label for="destination">Đến</label>
+            <select id="destination" name="destination" required>
+                <option value="">Chọn điểm đến</option>
+                <option value="Hanoi">Hà Nội</option>
+                <option value="Ho Chi Minh City">TP. Hồ Chí Minh</option>
+                <option value="Da Nang">Đà Nẵng</option>
+                <option value="Hue">Huế</option>
+            </select>
+        </div>
+        <div>
+            <label for="date">Ngày đi</label>
+            <input type="date" id="date" name="date" required />
+        </div>
+        <button type="submit" class="btn">Tìm vé</button>
+    </form>
 </section>
 
 <!-- Dịch vụ nổi bật -->
-<section class="services">
+<section class="services" aria-label="Services">
     <div class="container text-center">
-        <h2 class="section-title">Dịch Vụ Tiện Ích</h2>
+        <h2 class="section-title">Tiện ích phục vụ</h2>
         <div class="service-list">
             <div class="service-item">📶 WiFi miễn phí</div>
             <div class="service-item">❄️ Điều hòa</div>
@@ -25,8 +48,50 @@
     </div>
 </section>
 
-<!-- Điều hướng theo vai trò -->
-<section class="navigation mt-4">
+<!-- Features Section -->
+<section class="features" aria-label="Features">
+    <div class="feature-item">
+        <div class="feature-icon" aria-hidden="true">🚌</div>
+        <div class="feature-title">Lựa Chọn Tuyến Đường Đa Dạng</div>
+        <div class="feature-desc">Truy cập nhiều tuyến xe buýt qua các thành phố lớn và thị trấn.</div>
+    </div>
+    <div class="feature-item">
+        <div class="feature-icon" aria-hidden="true">⚡</div>
+        <div class="feature-title">Đặt Vé Nhanh Chóng</div>
+        <div class="feature-desc">Đặt vé dễ dàng với nền tảng thân thiện người dùng.</div>
+    </div>
+    <div class="feature-item">
+        <div class="feature-icon" aria-hidden="true">💳</div>
+        <div class="feature-title">Thanh Toán An Toàn</div>
+        <div class="feature-desc">Các phương thức thanh toán an toàn và linh hoạt.</div>
+    </div>
+</section>
+
+<!-- Popular Routes Section -->
+<section class="popular-routes" aria-label="Popular Routes">
+    <h2 class="section-title">Popular Routes</h2>
+    <div class="routes-grid">
+        <div class="route-card" tabindex="0">
+            <div class="route-from-to">Hà Nội → TP. Hồ Chí Minh</div>
+            <div class="route-details">Xe chạy hàng ngày, nhiều nhà xe, giá cạnh tranh.</div>
+        </div>
+        <div class="route-card" tabindex="0">
+            <div class="route-from-to">Đà Nẵng → Huế</div>
+            <div class="route-details">Tuyến đường đẹp, giờ chạy ổn định, ghế thoải mái.</div>
+        </div>
+        <div class="route-card" tabindex="0">
+            <div class="route-from-to">TP. Hồ Chí Minh → Đà Nẵng</div>
+            <div class="route-details">Có xe đêm, quy trình đặt vé dễ dàng.</div>
+        </div>
+        <div class="route-card" tabindex="0">
+            <div class="route-from-to">Hà Nội → Huế</div>
+            <div class="route-details">Giá cả phải chăng, tiện nghi tốt.</div>
+        </div>
+    </div>
+</section>
+
+<!-- Navigation Section -->
+<section class="navigation">
     <div class="container text-center">
         @if (User.Identity.IsAuthenticated)
         {
@@ -36,12 +101,36 @@
             }
             else if (User.IsInRole("Brand"))
             {
-                <p><a asp-area="Brand" asp-controller="Home" asp-action="Index" class="btn btn-primary">Brand Management</a></p>
+                <p><a asp-area="Brand" asp-controller="Home" asp-action="Index" class="btn btn-primary">Quản lý xe</a></p>
             }
             else if (User.IsInRole("NhanVien"))
             {
                 <p><a asp-area="Admin" asp-controller="Home" asp-action="EmployeePanel" class="btn btn-primary">Employee Panel</a></p>
             }
+            else if (User.IsInRole("Passenger"))
+            {
+                <p><a asp-area="Passenger" asp-controller="Home" asp-action="Index" class="btn btn-primary">Hành khách</a></p>
+            }
         }
     </div>
 </section>
+
+@section Scripts {
+    <script>
+        // Set the minimum date of date input to today
+        const dateInput = document.getElementById('date');
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.setAttribute('min', today);
+
+        // Form validation
+        const form = document.querySelector('.search-form');
+        form.addEventListener('submit', (e) => {
+            const origin = form.origin.value;
+            const dest = form.destination.value;
+            if (origin === dest) {
+                e.preventDefault();
+                alert('Điểm đi và điểm đến không được trùng nhau.');
+            }
+        });
+    </script>
+}
