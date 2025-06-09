@@ -1,0 +1,53 @@
+﻿@model List<TicketBus.Models.ViewModels.AvailableTripViewModel>
+
+@{
+    ViewData["Title"] = "Kết quả tìm vé";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/styleSearch.css" asp-append-version="true" />
+}
+
+<h2 class="text-center mt-4">Kết quả tìm vé</h2>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="alert alert-warning text-center mt-4">Không tìm thấy vé nào cho tuyến đường và ngày đã chọn.</div>
+}
+else
+{
+    <div class="table-responsive mt-4">
+        <table class="table table-striped table-bordered table-hover">
+            <thead class="thead-dark">
+                <tr>
+                    <th>@Html.DisplayNameFor(model => model[0].RouteName)</th>
+                    <th>@Html.DisplayNameFor(model => model[0].StartCity)</th>
+                    <th>@Html.DisplayNameFor(model => model[0].EndCity)</th>
+                    <th>@Html.DisplayNameFor(model => model[0].DepartureTime)</th>
+                    <th>@Html.DisplayNameFor(model => model[0].BrandName)</th>
+                    <th>@Html.DisplayNameFor(model => model[0].VehicleType)</th>
+                    <th>@Html.DisplayNameFor(model => model[0].AvailableSeats)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var trip in Model)
+                {
+                    <tr>
+                        <td>@trip.RouteName</td>
+                        <td>@trip.StartCity</td>
+                        <td>@trip.EndCity</td>
+                        <td>@trip.DepartureTime.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@trip.BrandName</td>
+                        <td>@trip.VehicleType</td>
+                        <td>@trip.AvailableSeats</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <a href="@Url.Action("Search", "Booking")" class="btn btn-primary mt-3">
+        <i class="bi bi-arrow-left-circle"></i> Quay lại trang chủ
+    </a>
+}

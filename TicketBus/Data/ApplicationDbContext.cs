@@ -426,11 +426,17 @@ namespace TicketBus.Data
                 .OnDelete(DeleteBehavior.NoAction)
                 .IsRequired(false);
 
+            modelBuilder.Entity<Ticket>()
+                .HasOne(t => t.BusRoute)
+                .WithMany()
+                .HasForeignKey(t => t.IdRoute)
+                .OnDelete(DeleteBehavior.NoAction)
+                .IsRequired(false);
+
             // Configure enum conversion for TicketState
             modelBuilder.Entity<Ticket>()
                 .Property(t => t.State)
                 .HasConversion<int>();
-
 
             // ChatRoom và ChatMessage
             modelBuilder.Entity<ChatRoom>()

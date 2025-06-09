@@ -17,6 +17,8 @@ namespace TicketBus.Models
         public int? IdPrice { get; set; }
         [ForeignKey("Bill")]
         public int? IdBill { get; set; } // New foreign key to Bill
+        [ForeignKey("BusRoute")]
+        public int? IdRoute { get; set; } // Foreign key to BusRoute
         public TicketState State { get; set; }
         [ForeignKey("Employee")]
         public int? IdEmployee { get; set; }
@@ -25,7 +27,10 @@ namespace TicketBus.Models
         public Price? Price { get; set; }
         public Bill? Bill { get; set; } // New navigation property to Bill
         public Employee? Employee { get; set; }
+        public BusRoute? BusRoute { get; set; } // Navigation property to BusRoute
 
+        // Thêm thuộc tính PaymentMethod
+        public string? PaymentMethod { get; set; } // "AtBus", "MoMo", hoặc null
     }
 
     public enum TicketState

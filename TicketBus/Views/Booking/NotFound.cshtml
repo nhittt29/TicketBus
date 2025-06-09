@@ -1,0 +1,17 @@
+﻿@{
+    ViewData["Title"] = "Không tìm thấy vé";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <h2 class="text-danger">Không tìm thấy vé</h2>
+            <p class="lead">Rất tiếc, không có chuyến xe nào phù hợp với tuyến đường và ngày bạn đã chọn.</p>
+            <p>Vui lòng thử lại với các điều kiện khác hoặc kiểm tra lại thông tin.</p>
+            <a href="@Url.Action("Search", "Booking")" class="btn btn-primary mt-3">
+                <i class="bi bi-arrow-left-circle"></i> Quay lại tìm kiếm
+            </a>
+        </div>
+    </div>
+</div>

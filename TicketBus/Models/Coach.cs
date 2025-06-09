@@ -25,8 +25,6 @@ namespace TicketBus.Models
 
         public string Documents { get; set; }
 
-
-
         [ForeignKey("Brand")]
         public int IdBrand { get; set; }
 
