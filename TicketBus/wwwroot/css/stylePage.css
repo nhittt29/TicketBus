@@ -297,18 +297,18 @@ body {
 
 .features {
     display: flex;
-    justify-content: space-around;
-    margin: 64px 16px;
+    justify-content: space-evenly; /* Thay space-around bằng space-evenly để phân bố đều hơn */
+    margin: 32px 8px;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 4px;
 }
 
 .feature-item {
     background: white;
     flex: 1 1 250px;
-    max-width: 300px;
+    max-width: 280px; /* Giảm max-width từ 300px xuống 280px */
     border-radius: 18px;
-    padding: 32px 24px;
+    padding: 24px 16px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     text-align: center;
     transition: transform 0.3s ease;
@@ -384,25 +384,25 @@ body {
 }
 
 .services {
-    margin: 64px 8px; /* Reduced margin-right and margin-left from 16px to 8px to bring cards closer to edges */
+    margin: 64px 8px;
 }
 
 .service-list {
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
-    gap: 8px; /* Reduced from 12px to 8px to bring cards closer */
+    gap: 8px;
 }
 
 .service-item {
     background: #fff;
-    padding: 12px 8px; /* Reduced padding from 16px 12px to 12px 8px to bring content closer to edges */
+    padding: 12px 8px;
     border-radius: 10px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     font-size: 16px;
     font-weight: 600;
     color: var(--secondary-color);
-    min-width: 200px; /* Added to ensure consistent width */
+    min-width: 200px;
     text-align: center;
 }
 
@@ -466,7 +466,12 @@ body {
 
     .features {
         flex-direction: column;
-        margin: 32px 16px;
+        margin: 16px 8px;
+        gap: 8px;
+    }
+
+    .feature-item {
+        max-width: 100%;
     }
 
     .service-list {
